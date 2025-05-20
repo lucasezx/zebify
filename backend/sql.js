@@ -12,15 +12,27 @@ const db = new sqlite3.Database("./database.db", (err) => {
 
 export const createTables = () => {
   db.serialize(() => {
+    // Tabela de usuários
     db.run(`CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            email TEXT NOT NULL UNIQUE,
-            password TEXT NOT NULL
-        )`);
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      email TEXT NOT NULL UNIQUE,
+      password TEXT NOT NULL
+    )`);
+
+    // Tabela de postagens
+    db.run(`CREATE TABLE IF NOT EXISTS posts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      tipo TEXT NOT NULL CHECK(tipo IN ('texto', 'imagem')),
+      conteudo TEXT,
+      legenda TEXT,
+      imagem_path TEXT,
+      created_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    )`);
   });
 };
-
 
 export const runQuery = promisify(db.run.bind(db));
 export const allQuery = promisify(db.all.bind(db));
