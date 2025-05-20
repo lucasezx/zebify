@@ -1,0 +1,27 @@
+.navbar {
+    display: flex;
+    justify-content: space-between; /* Espaça os itens entre as extremidades */
+    align-items: center;
+    background-color: #333; /* Cor de fundo */
+    padding: 10px 20px;
+  }
+  
+  .navbar-left {
+    flex: 1; /* Garante que o "Home" fique à esquerda */
+  }
+  
+  .navbar-right {
+    display: flex;
+    gap: 15px; /* Espaçamento entre os links */
+  }
+  
+  .navbar a {
+    color: white; /* Cor do texto */
+    text-decoration: none; /* Remove o sublinhado */
+    font-size: 16px;
+    transition: color 0.3s ease;
+  }
+  
+  .navbar a:hover {
+    color: #00bcd4; /* Cor ao passar o mouse */
+  }
