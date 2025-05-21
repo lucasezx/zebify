@@ -1,7 +1,9 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/authContext.js";
-
+import "../css/style.css";
+import "../components/footer";
+import Footer from "../components/footer";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -23,10 +25,10 @@ const Login = () => {
 
       if (res.ok) {
         login(data.user);
+        localStorage.setItem("user", JSON.stringify(data.user));
         localStorage.setItem("token", data.token);
-
         setMensagem("Login realizado com sucesso!");
-        navigate("/welcome"); 
+        navigate("/welcome");
       } else {
         setMensagem(data.error || "Erro ao fazer login.");
       }
@@ -37,26 +39,40 @@ const Login = () => {
   };
 
   return (
-    <div style={{ padding: 20 }}>
-      <h2>Login</h2>
-      <input
-        type="email"
-        placeholder="Email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        required
-      />
-      <br />
-      <input
-        type="password"
-        placeholder="Senha"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        required
-      />
-      <br />
-      <button onClick={handleLogin}>Entrar</button>
-      {mensagem && <p>{mensagem}</p>}
+    <div className="login-page">
+      <div className="login-box">
+        <h2>Entrar na Zebify</h2>
+        <form onSubmit={(e) => e.preventDefault()}>
+          <label htmlFor="email">Email</label>
+          <input
+            type="email"
+            id="email"
+            placeholder="email@gmail.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+
+          <label htmlFor="password">Senha</label>
+          <input
+            type="password"
+            id="password"
+            placeholder="Digite sua senha"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+
+          <button type="submit" onClick={handleLogin}>
+            Entrar
+          </button>
+          <p>
+            Não tem uma conta? <a href="/signup">Cadastre-se</a>
+          </p>
+        </form>
+        {mensagem && <p>{mensagem}</p>}
+      </div>
+      <Footer />
     </div>
   );
 };

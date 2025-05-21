@@ -12,6 +12,7 @@ const JWT_SECRET = "zebify_super_secreto";
 
 app.use(cors());
 app.use(express.json());
+app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 createTables();
 
@@ -72,6 +73,46 @@ app.post("/login", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Erro interno no login" });
+  }
+});
+
+app.post("/posts", authenticateToken, async (req, res) => {
+  const { tipo, conteudo, legenda, imagem_path } = req.body;
+  const user_id = req.user.id;
+
+  if (
+    !tipo ||
+    (tipo === "texto" && !conteudo) ||
+    (tipo === "imagem" && !imagem_path)
+  ) {
+    return res.status(400).json({ error: "Dados da publicação incompletos" });
+  }
+
+  try {
+    await runQuery(
+      `INSERT INTO posts (user_id, tipo, conteudo, legenda, imagem_path)
+       VALUES (?, ?, ?, ?, ?)`,
+      [user_id, tipo, conteudo || null, legenda || null, imagem_path || null]
+    );
+    res.status(201).json({ message: "Publicação criada com sucesso!" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Erro ao criar publicação" });
+  }
+});
+
+app.get("/posts", async (req, res) => {
+  try {
+    const posts = await allQuery(`
+      SELECT posts.*, users.name AS author
+      FROM posts
+      JOIN users ON posts.user_id = users.id
+      ORDER BY posts.created_at DESC
+    `);
+    res.json(posts);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Erro ao carregar posts" });
   }
 });
 

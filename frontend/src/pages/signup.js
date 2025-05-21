@@ -33,36 +33,41 @@ export default function Signup() {
   };
 
   return (
-    <div style={{ padding: 20 }}>
-      <h2>Cadastro</h2>
-      <form onSubmit={handleSubmit}>
-        <input
-          type="text"
-          name="name"
-          placeholder="Nome"
-          value={form.name}
-          onChange={handleChange}
-          required
-        /><br />
-        <input
-          type="email"
-          name="email"
-          placeholder="Email"
-          value={form.email}
-          onChange={handleChange}
-          required
-        /><br />
-        <input
-          type="password"
-          name="password"
-          placeholder="Senha"
-          value={form.password}
-          onChange={handleChange}
-          required
-        /><br />
-        <button type="submit">Cadastrar</button>
-      </form>
-      {mensagem && <p>{mensagem}</p>}
+    <div className="login-page">
+      <div className="login-box">
+        <h2>Cadastro</h2>
+        <form onSubmit={handleSubmit}>
+          <input
+            type="text"
+            name="name"
+            placeholder="Nome"
+            value={form.name}
+            onChange={handleChange}
+            required
+          />
+          <input
+            type="email"
+            name="email"
+            placeholder="Email"
+            value={form.email}
+            onChange={handleChange}
+            required
+          />
+          <input
+            type="password"
+            name="password"
+            placeholder="Senha"
+            value={form.password}
+            onChange={handleChange}
+            required
+          />
+          <button type="submit">Cadastrar</button>
+          <p>
+            Já tem uma conta? <a href="/login">Entrar</a>
+          </p>
+        </form>
+        {mensagem && <p>{mensagem}</p>}
+      </div>
     </div>
   );
 }

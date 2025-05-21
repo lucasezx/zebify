@@ -7,6 +7,7 @@ import Login from "./pages/login";
 import Signup from "./pages/signup";
 import Welcome from "./pages/welcome";
 import PrivateRoute from "./components/privateRoute";
+import "./css/style.css";
 
 function App() {
   return (

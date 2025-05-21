@@ -3,8 +3,11 @@ import { Navigate } from "react-router-dom";
 import { useAuth } from "../context/authContext";
 
 const PrivateRoute = ({ children }) => {
-  const { user } = useAuth();
-  return user ? children : <Navigate to="/welcome" />;
+  const { user, loading } = useAuth();
+
+  if (loading) return null; // ou um spinner
+
+  return user ? children : <Navigate to="/login" replace />;
 };
 
 export default PrivateRoute;
