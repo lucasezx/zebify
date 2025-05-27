@@ -61,7 +61,7 @@ export default function Signup() {
             onChange={handleChange}
             required
           />
-          <button type="submit">Cadastrar</button>
+          <button type="submit">Registar</button>
           <p>
             Já tem uma conta? <a href="/login">Entrar</a>
           </p>

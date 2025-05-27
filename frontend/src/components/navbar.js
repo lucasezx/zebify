@@ -1,7 +1,8 @@
 import React from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/authContext";
-import "./navbar.css";
+import "../css/navbar.css";
+import { FaUsers } from "react-icons/fa";
 
 const Navbar = () => {
   const { user, logout } = useAuth();
@@ -11,6 +12,10 @@ const Navbar = () => {
   const handleLogout = () => {
     logout();
     navigate("/login");
+  };
+
+  const irParaUtilizadores = () => {
+    navigate("/users");
   };
 
   const isLoginPage = location.pathname === "/login";
@@ -33,33 +38,34 @@ const Navbar = () => {
       </div>
 
       <div className="navbar-right">
-        {isLoginPage && <Link to="/signup">Cadastro</Link>}
+        {!isLoginPage && !isSignupPage && user && (
+          <>
+            {/* Ícone de usuários */}
+            <FaUsers
+              onClick={irParaUtilizadores}
+              size={20}
+              style={{ cursor: "pointer", marginRight: "15px" }}
+              title="Ver utilizadores"
+            />
 
+            <span className="welcome">Bem-vindo, {user.name}</span>
+
+            <button
+              className="btn-sair"
+              style={{
+                backgroundColor: "red",
+                color: "white",
+                border: "none",
+              }}
+              onClick={handleLogout}
+            >
+              Sair
+            </button>
+          </>
+        )}
+
+        {isLoginPage && <Link to="/signup">Registo</Link>}
         {isSignupPage && <Link to="/login">Login</Link>}
-
-        {!isLoginPage &&
-          !isSignupPage &&
-          (user ? (
-            <>
-              <span className="welcome">Bem-vindo, {user.name}</span>
-              <button
-                className="btn-sair"
-                style={{
-                  backgroundColor: "red",
-                  color: "white",
-                  border: "none",
-                }}
-                onClick={handleLogout}
-              >
-                Sair
-              </button>
-            </>
-          ) : (
-            <>
-              <Link to="/login">Login</Link>
-              <Link to="/signup">Cadastro</Link>
-            </>
-          ))}
       </div>
     </nav>
   );

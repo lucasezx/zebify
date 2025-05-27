@@ -7,6 +7,7 @@ import Login from "./pages/login";
 import Signup from "./pages/signup";
 import Welcome from "./pages/welcome";
 import PrivateRoute from "./components/privateRoute";
+import UsersPage from "./pages/usersPage";
 import "./css/style.css";
 
 function App() {
@@ -15,7 +16,6 @@ function App() {
       <Navbar />
       <Routes>
         <Route path="/welcome" element={<Welcome />} />
-
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
 
@@ -32,6 +32,14 @@ function App() {
           element={
             <PrivateRoute>
               <Profile />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/users"
+          element={
+            <PrivateRoute>
+              <UsersPage />
             </PrivateRoute>
           }
         />

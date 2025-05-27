@@ -67,7 +67,7 @@ const Login = () => {
             Entrar
           </button>
           <p>
-            Não tem uma conta? <a href="/signup">Cadastre-se</a>
+            Não tem uma conta? <a href="/signup">Registe-se</a>
           </p>
         </form>
         {mensagem && <p>{mensagem}</p>}

@@ -1,52 +1,51 @@
 import React, { useEffect, useState } from "react";
-import "../css/style.css";
+import NewPost from "../components/newPost";
 import Footer from "../components/footer";
+import CommentBox from "../components/commentBox";
 
 const Home = () => {
   const [posts, setPosts] = useState([]);
 
-  useEffect(() => {
-    const usuarioId = localStorage.getItem("usuario_id");
-    if (!usuarioId) {
-      window.location.href = "/login";
-      return;
-    }
+  const fetchPosts = async () => {
+    const res = await fetch("http://localhost:3001/api/posts");
+    const data = await res.json();
+    setPosts(data);
+  };
 
-    const mockPosts = [
-      { id: 1, author: "Lucas", content: "Olá, mundo!", likes: 10 },
-      { id: 2, author: "Ana", content: "Estou usando o Zebify!", likes: 5 },
-    ];
-    setPosts(mockPosts);
+  useEffect(() => {
+    fetchPosts();
   }, []);
 
   return (
     <div style={{ padding: "20px", fontFamily: "sans-serif" }}>
       <h1>Bem-vindo ao Zebify</h1>
+      <NewPost onPostSuccess={fetchPosts} />
       <PostList posts={posts} />
       <Footer />
     </div>
   );
 };
 
-const PostList = ({ posts }) => {
-  if (posts.length === 0) {
-    return <p>Nenhuma publicação ainda.</p>;
-  }
-
-  return (
-    <div style={{ marginTop: "20px" }}>
-      {posts.map((post) => (
-        <Post key={post.id} {...post} />
-      ))}
-    </div>
-  );
-};
-
-const Post = ({ author, content, likes }) => (
-  <div style={postStyle}>
-    <h2>@{author}</h2>
-    <p>{content}</p>
-    <p>❤️ {likes} curtidas</p>
+const PostList = ({ posts }) => (
+  <div style={{ marginTop: "20px" }}>
+    {posts.map((post) => (
+      <div key={post.id} style={postStyle}>
+        <h2>@{post.author}</h2>
+        {post.tipo === "texto" && <p>{post.conteudo}</p>}
+        {post.tipo === "imagem" && (
+          <>
+            <img
+              src={`http://localhost:3001/uploads/${post.imagem_path}`}
+              alt="imagem"
+              style={{ width: "100%", maxWidth: "400px" }}
+            />
+            <p>{post.legenda}</p>
+          </>
+        )}
+        <small>{new Date(post.created_at).toLocaleString()}</small>
+        <CommentBox postId={post.id} />
+      </div>
+    ))}
   </div>
 );
 
@@ -55,7 +54,7 @@ const postStyle = {
   padding: "15px",
   borderRadius: "8px",
   marginBottom: "15px",
-  backgroundColor: "#f9f9f9"
+  backgroundColor: "#f9f9f9",
 };
 
 export default Home;
