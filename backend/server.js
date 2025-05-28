@@ -70,10 +70,29 @@ io.on("connection", (socket) => {
     socket.broadcast.emit("atualizar_comentarios", postId);
   });
 
+  socket.on("editar_comentario", (comentarioAtualizado) => {
+    socket.broadcast.emit("comentario_editado", comentarioAtualizado);
+  });
+
+  socket.on("deletar_comentario", (comentarioId) => {
+    socket.broadcast.emit("comentario_deletado", comentarioId);
+  });
+
+  socket.on("deletar_postagem", (postId) => {
+    socket.broadcast.emit("postagem_deletada", postId);
+  });
+
+  socket.on("editar_postagem", (postagemAtualizada) => {
+    socket.broadcast.emit("postagem_editada", postagemAtualizada);
+  });
+  
   socket.on("disconnect", () => {
     console.log("Cliente desconectado");
   });
+
+
 });
+
 
 app.get("/", (req, res) => {
   res.send("API do Zebify está funcionando!");
@@ -136,50 +155,46 @@ app.post("/login", async (req, res) => {
   }
 });
 
-app.post(
-  "/api/posts",
-  authenticateToken,
-  upload.single("imagem"),
-  async (req, res) => {
-    const { tipo, conteudo, legenda, visibility = "public" } = req.body;
-    const user_id = req.user.id;
+app.post("/api/posts", authenticateToken, upload.single("imagem"), async (req, res) => {
+  const { tipo, conteudo, legenda, visibility = "public" } = req.body;
+  const user_id = req.user.id;
 
-    let imagem_path = null;
-    if (tipo === "imagem" && req.file) imagem_path = req.file.filename;
+  let imagem_path = null;
+  if (tipo === "imagem" && req.file) imagem_path = req.file.filename;
 
-    if (
-      !tipo ||
-      (tipo === "texto" && !conteudo) ||
-      (tipo === "imagem" && !imagem_path)
-    ) {
-      return res.status(400).json({ error: "Dados da publicação incompletos" });
-    }
+  if (
+    !tipo ||
+    (tipo === "texto" && !conteudo) ||
+    (tipo === "imagem" && !imagem_path)
+  ) {
+    return res.status(400).json({ error: "Dados da publicação incompletos" });
+  }
 
-    if (!["public", "friends"].includes(visibility)) {
-      return res.status(400).json({ error: "Visibilidade inválida." });
-    }
+  if (!["public", "friends"].includes(visibility)) {
+    return res.status(400).json({ error: "Visibilidade inválida." });
+  }
 
-    try {
-      await runQuery(
-        `INSERT INTO posts
+  try {
+    await runQuery(
+      `INSERT INTO posts
            (user_id, tipo, conteudo, legenda, imagem_path, visibility)
          VALUES (?, ?, ?, ?, ?, ?)`,
-        [
-          user_id,
-          tipo,
-          conteudo || null,
-          legenda || null,
-          imagem_path,
-          visibility,
-        ]
-      );
+      [
+        user_id,
+        tipo,
+        conteudo || null,
+        legenda || null,
+        imagem_path,
+        visibility,
+      ]
+    );
 
-      res.status(201).json({ message: "Publicação criada com sucesso!" });
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ error: "Erro ao criar publicação" });
-    }
+    res.status(201).json({ message: "Publicação criada com sucesso!" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Erro ao criar publicação" });
   }
+}
 );
 
 app.get("/api/posts", authenticateToken, async (req, res) => {
@@ -260,27 +275,6 @@ app.put("/api/posts/:id", authenticateToken, async (req, res) => {
     res.json({ message: "Publicação atualizada com sucesso!" });
   } catch (err) {
     res.status(500).json({ error: "Erro ao editar publicação." });
-  }
-});
-
-app.delete("/api/posts/:id", authenticateToken, async (req, res) => {
-  const userId = req.user.id;
-  const postId = req.params.id;
-
-  try {
-    const post = await allQuery(
-      `SELECT * FROM posts WHERE id = ? AND user_id = ?`,
-      [postId, userId]
-    );
-    if (!post.length)
-      return res
-        .status(403)
-        .json({ error: "Sem permissão para deletar este post." });
-
-    await runQuery(`DELETE FROM posts WHERE id = ?`, [postId]);
-    res.json({ message: "Publicação deletada com sucesso!" });
-  } catch (err) {
-    res.status(500).json({ error: "Erro ao apagar publicação." });
   }
 });
 
@@ -544,6 +538,27 @@ app.put("/api/comments/:id", authenticateToken, async (req, res) => {
     res.json({ message: "Comentário editado com sucesso." });
   } catch (err) {
     res.status(500).json({ error: "Erro ao editar comentário." });
+  }
+});
+
+app.delete("/api/posts/:id", authenticateToken, async (req, res) => {
+  const userId = req.user.id;
+  const postId = req.params.id;
+
+  try {
+    const post = await allQuery(
+      `SELECT * FROM posts WHERE id = ? AND user_id = ?`,
+      [postId, userId]
+    );
+    if (!post.length)
+      return res
+        .status(403)
+        .json({ error: "Sem permissão para deletar este post." });
+
+    await runQuery(`DELETE FROM posts WHERE id = ?`, [postId]);
+    res.json({ message: "Publicação deletada com sucesso!" });
+  } catch (err) {
+    res.status(500).json({ error: "Erro ao apagar publicação." });
   }
 });
 
