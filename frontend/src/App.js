@@ -8,6 +8,7 @@ import Signup from "./pages/signup";
 import Welcome from "./pages/welcome";
 import PrivateRoute from "./components/privateRoute";
 import UsersPage from "./pages/usersPage";
+import NewPostPage from "./pages/newPostPage";
 import "./css/style.css";
 
 function App() {
@@ -18,6 +19,15 @@ function App() {
         <Route path="/welcome" element={<Welcome />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+
+        <Route
+          path="/new-post"
+          element={
+            <PrivateRoute>
+              <NewPostPage />
+            </PrivateRoute>
+          }
+        />
 
         <Route
           path="/"

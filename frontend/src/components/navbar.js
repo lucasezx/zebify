@@ -1,71 +1,125 @@
-import React from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/authContext";
+import { FaUsers, FaHome, FaUser, FaPlus } from "react-icons/fa";
 import "../css/navbar.css";
-import { FaUsers } from "react-icons/fa";
+
+const API = process.env.REACT_APP_API_URL ?? "http://localhost:3001";
 
 const Navbar = () => {
   const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const [pedidos, setPedidos] = useState(0);
+
+  const buscarPedidos = useCallback(async () => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    try {
+      const res = await fetch(`${API}/api/friends/requests`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!res.ok) {
+        if (res.status === 401 || res.status === 403) {
+          setPedidos(0);
+          logout();
+          navigate("/login");
+          return;
+        }
+        const txt = await res.text();
+        throw new Error(txt);
+      }
+
+      const data = await res.json();
+      setPedidos(data.length);
+    } catch (err) {
+      console.error("Erro ao buscar pedidos:", err.message);
+    }
+  }, [logout, navigate]);
+
+  useEffect(() => {
+    if (!user) return;
+    buscarPedidos();
+    const t = setInterval(buscarPedidos, 10_000);
+    return () => clearInterval(t);
+  }, [user, buscarPedidos]);
 
   const handleLogout = () => {
     logout();
     navigate("/login");
   };
 
-  const irParaUtilizadores = () => {
-    navigate("/users");
-  };
+  const Item = ({ Icon, to, badge, title }) => (
+    <div
+      onClick={() => navigate(to)}
+      style={{ position: "relative", marginRight: "18px", cursor: "pointer" }}
+      title={title}
+    >
+      <Icon
+        size={22}
+        color={location.pathname === to ? "#4287f5" : undefined}
+      />
+      {badge > 0 && (
+        <span
+          style={{
+            position: "absolute",
+            top: "-6px",
+            right: "-8px",
+            background: "red",
+            color: "white",
+            borderRadius: "50%",
+            padding: "2px 6px",
+            fontSize: "11px",
+            fontWeight: "bold",
+          }}
+        >
+          {badge}
+        </span>
+      )}
+    </div>
+  );
 
-  const isLoginPage = location.pathname === "/login";
-  const isSignupPage = location.pathname === "/signup";
+  const isAuthPage = ["/login", "/signup"].includes(location.pathname);
 
   return (
     <nav className="navbar">
       <div className="navbar-left">
-        {isLoginPage || isSignupPage ? (
-          <span className="logo">Zebify</span>
-        ) : (
-          <Link to="/" className="logo">
-            Zebify
-          </Link>
-        )}
-
-        {!isLoginPage && !isSignupPage && user && (
-          <Link to="/profile">Perfil</Link>
-        )}
+        <span className="logo" onClick={() => navigate("/")}>
+          Zebify
+        </span>
       </div>
 
       <div className="navbar-right">
-        {!isLoginPage && !isSignupPage && user && (
+        {user && !isAuthPage ? (
           <>
-            {/* Ícone de usuários */}
-            <FaUsers
-              onClick={irParaUtilizadores}
-              size={20}
-              style={{ cursor: "pointer", marginRight: "15px" }}
-              title="Ver utilizadores"
+            <Item Icon={FaHome} to="/" title="Feed" />
+
+            <Item Icon={FaPlus} to="/new-post" title="Nova publicação" />
+
+            <Item
+              Icon={FaUsers}
+              to="/users"
+              badge={pedidos}
+              title="Utilizadores / Pedidos"
             />
 
-            <span className="welcome">Bem-vindo, {user.name}</span>
+            <Item Icon={FaUser} to="/profile" title="Perfil" />
 
-            <button
-              className="btn-sair"
-              style={{
-                backgroundColor: "red",
-                color: "white",
-                border: "none",
-              }}
-              onClick={handleLogout}
-            >
+            <span className="welcome">Olá, {user.name}</span>
+            <button className="btn-sair" onClick={handleLogout}>
               Sair
             </button>
           </>
+        ) : (
+          !isAuthPage && (
+            <>
+              <Link to="/login">Login</Link>
+              <Link to="/signup">Registo</Link>
+            </>
+          )
         )}
-
-        {isLoginPage && <Link to="/signup">Registo</Link>}
-        {isSignupPage && <Link to="/login">Login</Link>}
       </div>
     </nav>
   );

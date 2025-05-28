@@ -1,10 +1,13 @@
 import express from "express";
+import { createServer } from "http";
+import { Server } from "socket.io";
 import cors from "cors";
 import path from "path";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import multer from "multer";
 import fs from "fs";
+global.io = null;
 
 import { createTables, runQuery, allQuery } from "./sql.js";
 
@@ -44,6 +47,33 @@ function authenticateToken(req, res, next) {
     next();
   });
 }
+
+const server = createServer(app);
+
+const io = new Server(server, {
+  cors: {
+    origin: "http://localhost:3000",
+    methods: ["GET", "POST"],
+  },
+});
+
+global.io = io;
+
+io.on("connection", (socket) => {
+  console.log("Cliente conectado via WebSocket");
+
+  socket.on("nova_postagem", () => {
+    socket.broadcast.emit("atualizar_feed");
+  });
+
+  socket.on("novo_comentario", (postId) => {
+    socket.broadcast.emit("atualizar_comentarios", postId);
+  });
+
+  socket.on("disconnect", () => {
+    console.log("Cliente desconectado");
+  });
+});
 
 app.get("/", (req, res) => {
   res.send("API do Zebify está funcionando!");
@@ -111,13 +141,11 @@ app.post(
   authenticateToken,
   upload.single("imagem"),
   async (req, res) => {
-    const { tipo, conteudo, legenda } = req.body;
+    const { tipo, conteudo, legenda, visibility = "public" } = req.body;
     const user_id = req.user.id;
 
     let imagem_path = null;
-    if (tipo === "imagem" && req.file) {
-      imagem_path = req.file.filename;
-    }
+    if (tipo === "imagem" && req.file) imagem_path = req.file.filename;
 
     if (
       !tipo ||
@@ -127,12 +155,25 @@ app.post(
       return res.status(400).json({ error: "Dados da publicação incompletos" });
     }
 
+    if (!["public", "friends"].includes(visibility)) {
+      return res.status(400).json({ error: "Visibilidade inválida." });
+    }
+
     try {
       await runQuery(
-        `INSERT INTO posts (user_id, tipo, conteudo, legenda, imagem_path)
-       VALUES (?, ?, ?, ?, ?)`,
-        [user_id, tipo, conteudo || null, legenda || null, imagem_path]
+        `INSERT INTO posts
+           (user_id, tipo, conteudo, legenda, imagem_path, visibility)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [
+          user_id,
+          tipo,
+          conteudo || null,
+          legenda || null,
+          imagem_path,
+          visibility,
+        ]
       );
+
       res.status(201).json({ message: "Publicação criada com sucesso!" });
     } catch (error) {
       console.error(error);
@@ -141,14 +182,35 @@ app.post(
   }
 );
 
-app.get("/api/posts", async (req, res) => {
+app.get("/api/posts", authenticateToken, async (req, res) => {
+  const viewerId = req.user.id;
+
   try {
-    const posts = await allQuery(`
-      SELECT posts.*, users.name AS author
-      FROM posts
-      JOIN users ON posts.user_id = users.id
-      ORDER BY posts.created_at DESC
-    `);
+    const posts = await allQuery(
+      `
+      SELECT p.*, u.name AS author
+      FROM posts p
+      JOIN users u ON u.id = p.user_id
+
+      LEFT JOIN friendships f
+        ON (
+             (f.sender_id   = ? AND f.receiver_id = p.user_id)
+          OR (f.receiver_id = ? AND f.sender_id   = p.user_id)
+           )
+        AND f.status = 'aceito'
+
+      WHERE
+            p.visibility = 'public'
+         OR p.user_id = ?
+         OR (
+              p.visibility = 'friends'
+              AND f.id IS NOT NULL
+            )
+      ORDER BY p.created_at DESC
+      `,
+      [viewerId, viewerId, viewerId]
+    );
+
     res.json(posts);
   } catch (err) {
     console.error(err);
@@ -371,6 +433,120 @@ app.get("/api/users/with-status", authenticateToken, async (req, res) => {
   }
 });
 
+app.post("/api/friends/reject", authenticateToken, async (req, res) => {
+  const receiverId = req.user.id;
+  const { senderId } = req.body;
+
+  try {
+    const pedido = await allQuery(
+      `SELECT * FROM friendships
+      WHERE sender_id = ? AND receiver_id = ? AND status = 'pendente'`,
+      [senderId, receiverId]
+    );
+
+    if (!pedido.length) {
+      return res
+        .status(404)
+        .json({ error: "Pedido de amizade não encontrado." });
+    }
+
+    await runQuery(
+      `DELETE FROM friendships
+      WHERE sender_id = ? AND receiver_id = ? AND status = 'pendente'`,
+      [senderId, receiverId]
+    );
+
+    res.json({ message: "Pedido de amizade recusado." });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Erro ao recusar pedido de amizade." });
+  }
+});
+
+app.post("/api/comments", authenticateToken, async (req, res) => {
+  const { postId, conteudo } = req.body;
+  const userId = req.user.id;
+
+  if (!postId || !conteudo) {
+    return res.status(400).json({ error: "Comentário inválido." });
+  }
+
+  try {
+    const userInfo = await allQuery(`SELECT name FROM users WHERE id = ?`, [
+      userId,
+    ]);
+
+    const result = await runQuery(
+      `INSERT INTO comments (post_id, user_id, conteudo) VALUES (?, ?, ?)`,
+      [postId, userId, conteudo]
+    );
+
+    const novoComentario = {
+      id: result.lastID,
+      postId,
+      conteudo,
+      user_id: userId,
+      user_name: userInfo[0]?.name || "Usuário",
+      created_at: new Date().toISOString(),
+    };
+
+    // Emitir o comentário via socket
+    if (global.io) {
+      global.io.emit("newComment", novoComentario);
+    } else {
+      console.warn("global.io não está definido!");
+    }
+
+    res.status(201).json({ message: "Comentário adicionado!" });
+  } catch (err) {
+    console.error("Erro ao comentar:", err); // ← ESSENCIAL
+    res.status(500).json({ error: "Erro ao comentar." });
+  }
+});
+
+app.get("/api/comments/:postId", async (req, res) => {
+  const { postId } = req.params;
+  try {
+    const comentarios = await allQuery(
+      `SELECT c.*, u.name AS autor
+      FROM comments c
+      JOIN users u ON c.user_id = u.id
+      WHERE c.post_id = ?
+      ORDER BY c.created_at ASC`,
+      [postId]
+    );
+    res.json(comentarios);
+  } catch (err) {
+    res.status(500).json({ error: "Erro ao buscar comentários." });
+  }
+});
+
+app.put("/api/comments/:id", authenticateToken, async (req, res) => {
+  const userId = req.user.id;
+  const commentId = req.params.id;
+  const { conteudo } = req.body;
+
+  try {
+    const [comment] = await allQuery(
+      `SELECT * FROM comments WHERE id = ? AND user_id = ?`,
+      [commentId, userId]
+    );
+
+    if (!comment) {
+      return res.status(403).json({ error: "Sem permissão para editar." });
+    }
+
+    await runQuery(`UPDATE comments SET conteudo = ? WHERE id = ?`, [
+      conteudo,
+      commentId,
+    ]);
+
+    res.json({ message: "Comentário editado com sucesso." });
+  } catch (err) {
+    res.status(500).json({ error: "Erro ao editar comentário." });
+  }
+});
+
 app.delete("/api/friends/:id", authenticateToken, async (req, res) => {
   const userId = req.user.id;
   const otherId = req.params.id;
@@ -433,103 +609,12 @@ app.delete("/api/friends/request/:id", authenticateToken, async (req, res) => {
   }
 });
 
-app.post("/api/friends/reject", authenticateToken, async (req, res) => {
-  const receiverId = req.user.id;
-  const { senderId } = req.body;
-
-  try {
-    const pedido = await allQuery(
-      `SELECT * FROM friendships
-       WHERE sender_id = ? AND receiver_id = ? AND status = 'pendente'`,
-      [senderId, receiverId]
-    );
-
-    if (!pedido.length) {
-      return res
-        .status(404)
-        .json({ error: "Pedido de amizade não encontrado." });
-    }
-
-    await runQuery(
-      `DELETE FROM friendships
-       WHERE sender_id = ? AND receiver_id = ? AND status = 'pendente'`,
-      [senderId, receiverId]
-    );
-
-    res.json({ message: "Pedido de amizade recusado." });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Erro ao recusar pedido de amizade." });
-  }
-});
-
-app.post("/api/comments", authenticateToken, async (req, res) => {
-  const { postId, conteudo } = req.body;
-  const userId = req.user.id;
-
-  if (!postId || !conteudo) {
-    return res.status(400).json({ error: "Comentário inválido." });
-  }
-
-  try {
-    await runQuery(
-      `INSERT INTO comments (post_id, user_id, conteudo) VALUES (?, ?, ?)`,
-      [postId, userId, conteudo]
-    );
-    res.status(201).json({ message: "Comentário adicionado!" });
-  } catch (err) {
-    res.status(500).json({ error: "Erro ao comentar." });
-  }
-});
-
-app.get("/api/comments/:postId", async (req, res) => {
-  const { postId } = req.params;
-  try {
-    const comentarios = await allQuery(
-      `SELECT c.*, u.name AS autor
-       FROM comments c
-       JOIN users u ON c.user_id = u.id
-       WHERE c.post_id = ?
-       ORDER BY c.created_at ASC`,
-      [postId]
-    );
-    res.json(comentarios);
-  } catch (err) {
-    res.status(500).json({ error: "Erro ao buscar comentários." });
-  }
-});
-
-app.put("/api/comments/:id", authenticateToken, async (req, res) => {
-  const userId = req.user.id;
-  const commentId = req.params.id;
-  const { conteudo } = req.body;
-
-  try {
-    const [comment] = await allQuery(
-      `SELECT * FROM comments WHERE id = ? AND user_id = ?`,
-      [commentId, userId]
-    );
-
-    if (!comment) {
-      return res.status(403).json({ error: "Sem permissão para editar." });
-    }
-
-    await runQuery(`UPDATE comments SET conteudo = ? WHERE id = ?`, [
-      conteudo,
-      commentId,
-    ]);
-
-    res.json({ message: "Comentário editado com sucesso." });
-  } catch (err) {
-    res.status(500).json({ error: "Erro ao editar comentário." });
-  }
-});
-
 app.delete("/api/comments/:id", authenticateToken, async (req, res) => {
   const userId = req.user.id;
   const commentId = req.params.id;
 
   try {
+    // Buscar o comentário antes de deletar
     const [comment] = await allQuery(
       `SELECT * FROM comments WHERE id = ? AND user_id = ?`,
       [commentId, userId]
@@ -539,14 +624,22 @@ app.delete("/api/comments/:id", authenticateToken, async (req, res) => {
       return res.status(403).json({ error: "Sem permissão para deletar." });
     }
 
+    // Apagar do banco
     await runQuery(`DELETE FROM comments WHERE id = ?`, [commentId]);
+
+    // Emitir evento para todos os clientes
+    global.io.emit("deletedComment", {
+      commentId: comment.id,
+      postId: comment.post_id,
+    });
 
     res.json({ message: "Comentário deletado com sucesso." });
   } catch (err) {
+    console.error("Erro ao deletar comentário:", err);
     res.status(500).json({ error: "Erro ao deletar comentário." });
   }
 });
 
-app.listen(port, () => {
-  console.log(`Servidor rodando na porta ${port}`);
+server.listen(port, () => {
+  console.log(`Servidor HTTP e WebSocket rodando na porta ${port}`);
 });

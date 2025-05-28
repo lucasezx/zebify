@@ -113,7 +113,16 @@ const Profile = () => {
         <h2 style={{ marginTop: "30px" }}>Minhas Publicações</h2>
         {meusPosts.map((post) => (
           <div key={post.id} className="card">
-            <h3>{post.tipo === "imagem" ? "📷 Imagem" : "📝 Texto"}</h3>
+            <h3>
+              {post.tipo === "imagem" ? "📷 Imagem" : "📝 Texto"}
+              {post.visibility === "friends" && (
+                <span
+                  style={{ fontSize: "12px", color: "#777", marginLeft: "6px" }}
+                >
+                  🔒 Apenas amigos
+                </span>
+              )}
+            </h3>
 
             {editando === post.id ? (
               <>
