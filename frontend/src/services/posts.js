@@ -1,4 +1,5 @@
-const API = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
+const API = "http://localhost:3001";
+
 const token = () => localStorage.getItem("token");
 
 export async function updatePost(id, payload) {

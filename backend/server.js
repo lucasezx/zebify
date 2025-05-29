@@ -63,36 +63,33 @@ io.on("connection", (socket) => {
   console.log("Cliente conectado via WebSocket");
 
   socket.on("nova_postagem", () => {
-    socket.broadcast.emit("atualizar_feed");
+    io.emit("atualizar_feed");
   });
 
   socket.on("novo_comentario", (postId) => {
-    socket.broadcast.emit("atualizar_comentarios", postId);
+    io.emit("atualizar_comentarios", postId);
   });
 
   socket.on("editar_comentario", (comentarioAtualizado) => {
-    socket.broadcast.emit("comentario_editado", comentarioAtualizado);
+    io.emit("comentario_editado", comentarioAtualizado);
   });
 
   socket.on("deletar_comentario", (comentarioId) => {
-    socket.broadcast.emit("comentario_deletado", comentarioId);
-  });
-
-  socket.on("deletar_postagem", (postId) => {
-    socket.broadcast.emit("postagem_deletada", postId);
+    io.emit("comentario_deletado", comentarioId);
   });
 
   socket.on("editar_postagem", (postagemAtualizada) => {
-    socket.broadcast.emit("postagem_editada", postagemAtualizada);
+    io.emit("postagem_editada", postagemAtualizada);
   });
-  
+
+  socket.on("deletar_postagem", (postId) => {
+    io.emit("postagem_deletada", postId);
+  });
+
   socket.on("disconnect", () => {
     console.log("Cliente desconectado");
   });
-
-
 });
-
 
 app.get("/", (req, res) => {
   res.send("API do Zebify está funcionando!");
@@ -155,46 +152,50 @@ app.post("/login", async (req, res) => {
   }
 });
 
-app.post("/api/posts", authenticateToken, upload.single("imagem"), async (req, res) => {
-  const { tipo, conteudo, legenda, visibility = "public" } = req.body;
-  const user_id = req.user.id;
+app.post(
+  "/api/posts",
+  authenticateToken,
+  upload.single("imagem"),
+  async (req, res) => {
+    const { tipo, conteudo, legenda, visibility = "public" } = req.body;
+    const user_id = req.user.id;
 
-  let imagem_path = null;
-  if (tipo === "imagem" && req.file) imagem_path = req.file.filename;
+    let imagem_path = null;
+    if (tipo === "imagem" && req.file) imagem_path = req.file.filename;
 
-  if (
-    !tipo ||
-    (tipo === "texto" && !conteudo) ||
-    (tipo === "imagem" && !imagem_path)
-  ) {
-    return res.status(400).json({ error: "Dados da publicação incompletos" });
-  }
+    if (
+      !tipo ||
+      (tipo === "texto" && !conteudo) ||
+      (tipo === "imagem" && !imagem_path)
+    ) {
+      return res.status(400).json({ error: "Dados da publicação incompletos" });
+    }
 
-  if (!["public", "friends"].includes(visibility)) {
-    return res.status(400).json({ error: "Visibilidade inválida." });
-  }
+    if (!["public", "friends"].includes(visibility)) {
+      return res.status(400).json({ error: "Visibilidade inválida." });
+    }
 
-  try {
-    await runQuery(
-      `INSERT INTO posts
+    try {
+      await runQuery(
+        `INSERT INTO posts
            (user_id, tipo, conteudo, legenda, imagem_path, visibility)
          VALUES (?, ?, ?, ?, ?, ?)`,
-      [
-        user_id,
-        tipo,
-        conteudo || null,
-        legenda || null,
-        imagem_path,
-        visibility,
-      ]
-    );
+        [
+          user_id,
+          tipo,
+          conteudo || null,
+          legenda || null,
+          imagem_path,
+          visibility,
+        ]
+      );
 
-    res.status(201).json({ message: "Publicação criada com sucesso!" });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Erro ao criar publicação" });
+      res.status(201).json({ message: "Publicação criada com sucesso!" });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: "Erro ao criar publicação" });
+    }
   }
-}
 );
 
 app.get("/api/posts", authenticateToken, async (req, res) => {
@@ -247,34 +248,6 @@ app.get("/api/my-posts", authenticateToken, async (req, res) => {
     res.json(posts);
   } catch (err) {
     res.status(500).json({ error: "Erro ao buscar suas publicações." });
-  }
-});
-
-app.put("/api/posts/:id", authenticateToken, async (req, res) => {
-  const userId = req.user.id;
-  const postId = req.params.id;
-  const { conteudo, legenda } = req.body;
-
-  try {
-    const post = await allQuery(
-      `SELECT * FROM posts WHERE id = ? AND user_id = ?`,
-      [postId, userId]
-    );
-    if (!post.length)
-      return res
-        .status(403)
-        .json({ error: "Sem permissão para editar este post." });
-
-    await runQuery(
-      `
-      UPDATE posts SET conteudo = ?, legenda = ? WHERE id = ?
-    `,
-      [conteudo, legenda, postId]
-    );
-
-    res.json({ message: "Publicação atualizada com sucesso!" });
-  } catch (err) {
-    res.status(500).json({ error: "Erro ao editar publicação." });
   }
 });
 
@@ -334,6 +307,15 @@ app.post("/api/friends/accept", authenticateToken, async (req, res) => {
       `UPDATE friendships SET status = 'aceito' WHERE sender_id = ? AND receiver_id = ?`,
       [senderId, receiverId]
     );
+
+    if (global.io) {
+      global.io.emit("amizade_aceita", {
+        userId1: senderId,
+        userId2: receiverId,
+      });
+
+      global.io.emit("atualizar_feed");
+    }
 
     res.json({ message: "Pedido de amizade aceito!" });
   } catch (err) {
@@ -515,30 +497,72 @@ app.get("/api/comments/:postId", async (req, res) => {
   }
 });
 
+app.put("/api/posts/:id", authenticateToken, async (req, res) => {
+  const postId = req.params.id;
+  const userId = req.user.id;
+  const { conteudo, legenda, visibility } = req.body;
+
+  const [post] = await allQuery(
+    "SELECT * FROM posts WHERE id=? AND user_id=?",
+    [postId, userId]
+  );
+  if (!post) return res.status(403).json({ error: "Sem permissão" });
+
+  await runQuery(
+    "UPDATE posts SET conteudo=?, legenda=?, visibility=? WHERE id=?",
+    [
+      conteudo ?? post.conteudo,
+      legenda ?? post.legenda,
+      visibility ?? post.visibility,
+      postId,
+    ]
+  );
+
+  const [postAtualizado] = await allQuery(
+    `SELECT p.id,
+            p.conteudo,
+            p.legenda,
+            p.tipo,
+            p.imagem_path,
+            p.visibility,
+            p.created_at,
+            u.name AS author
+       FROM posts p
+       JOIN users u ON u.id = p.user_id
+      WHERE p.id = ?`,
+    [postId]
+  );
+
+  io.emit("postagem_editada", postAtualizado);
+  res.json(postAtualizado);
+});
+
 app.put("/api/comments/:id", authenticateToken, async (req, res) => {
   const userId = req.user.id;
   const commentId = req.params.id;
   const { conteudo } = req.body;
 
-  try {
-    const [comment] = await allQuery(
-      `SELECT * FROM comments WHERE id = ? AND user_id = ?`,
-      [commentId, userId]
-    );
+  const [own] = await allQuery(
+    "SELECT * FROM comments WHERE id = ? AND user_id = ?",
+    [commentId, userId]
+  );
+  if (!own) return res.status(403).json({ error: "Sem permissão" });
 
-    if (!comment) {
-      return res.status(403).json({ error: "Sem permissão para editar." });
-    }
+  await runQuery("UPDATE comments SET conteudo = ? WHERE id = ?", [
+    conteudo,
+    commentId,
+  ]);
 
-    await runQuery(`UPDATE comments SET conteudo = ? WHERE id = ?`, [
-      conteudo,
-      commentId,
-    ]);
+  const [comentario] = await allQuery(
+    `SELECT c.*, u.name AS autor
+       FROM comments c
+       JOIN users u ON u.id = c.user_id
+      WHERE c.id = ?`,
+    [commentId]
+  );
 
-    res.json({ message: "Comentário editado com sucesso." });
-  } catch (err) {
-    res.status(500).json({ error: "Erro ao editar comentário." });
-  }
+  io.emit("comentario_editado", comentario);
+  res.json(comentario);
 });
 
 app.delete("/api/posts/:id", authenticateToken, async (req, res) => {
@@ -583,10 +607,25 @@ app.delete("/api/friends/:id", authenticateToken, async (req, res) => {
 
     await runQuery(
       `DELETE FROM friendships
-       WHERE (sender_id = ? AND receiver_id = ?)
-          OR (sender_id = ? AND receiver_id = ?)`,
+     WHERE (sender_id = ? AND receiver_id = ?)
+        OR (sender_id = ? AND receiver_id = ?)`,
       [userId, otherId, otherId, userId]
     );
+
+    // ── DEBUG opcional: garante que não restou nenhuma linha
+    const check = await allQuery(
+      `SELECT id FROM friendships
+     WHERE (sender_id = ? AND receiver_id = ?)
+        OR (sender_id = ? AND receiver_id = ?)`,
+      [userId, otherId, otherId, userId]
+    );
+    console.log("⚡ Restaram linhas de amizade:", check.length); // deve imprimir 0
+
+    // ── Emite eventos em tempo real
+    if (global.io) {
+      global.io.emit("amizade_removida", { userId1: userId, userId2: otherId });
+      global.io.emit("atualizar_feed"); // 👈 força todos a recarregar o feed
+    }
 
     res.json({ message: "Amizade removida com sucesso." });
   } catch (err) {
@@ -629,7 +668,6 @@ app.delete("/api/comments/:id", authenticateToken, async (req, res) => {
   const commentId = req.params.id;
 
   try {
-    // Buscar o comentário antes de deletar
     const [comment] = await allQuery(
       `SELECT * FROM comments WHERE id = ? AND user_id = ?`,
       [commentId, userId]
@@ -639,10 +677,8 @@ app.delete("/api/comments/:id", authenticateToken, async (req, res) => {
       return res.status(403).json({ error: "Sem permissão para deletar." });
     }
 
-    // Apagar do banco
     await runQuery(`DELETE FROM comments WHERE id = ?`, [commentId]);
 
-    // Emitir evento para todos os clientes
     global.io.emit("deletedComment", {
       commentId: comment.id,
       postId: comment.post_id,

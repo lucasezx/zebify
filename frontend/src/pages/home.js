@@ -25,8 +25,37 @@ const Home = () => {
       fetchPosts();
     });
 
+    socket.on("postagem_editada", () => {
+      console.log("Post atualizado, recarregando feed...");
+      fetchPosts();
+    });
+
+    socket.on("postagem_deletada", (postId) => {
+      setPosts((prev) => prev.filter((p) => p.id !== postId));
+    });
+
+    socket.on("amizade_aceita", ({ userId1, userId2 }) => {
+      const meuId = JSON.parse(localStorage.getItem("user"))?.id;
+      if (meuId === userId1 || meuId === userId2) {
+        console.log("Amizade aceita, recarregando feed...");
+        fetchPosts();
+      }
+    });
+
+    socket.on("amizade_removida", ({ userId1, userId2 }) => {
+      const meuId = JSON.parse(localStorage.getItem("user"))?.id;
+      if (meuId === userId1 || meuId === userId2) {
+        console.log("Amizade removida — recarregando feed...");
+        fetchPosts();
+      }
+    });
+
     return () => {
       socket.off("atualizar_feed");
+      socket.off("postagem_editada");
+      socket.off("postagem_deletada");
+      socket.off("amizade_aceita");
+      socket.off("amizade_removida");
     };
   }, []);
 

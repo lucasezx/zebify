@@ -31,19 +31,33 @@ export default function CommentBox({ postId }) {
 
     const receberNovoComentario = (data) => {
       if (data.postId === postId) {
-        setComentarios((prev) => [
-          ...prev,
-          {
-            ...data,
-            autor: data.user_name, // <- adapta para bater com o formato do seu .map
-          },
-        ]);
+        setComentarios((prev) => [...prev, { ...data, autor: data.user_name }]);
       }
     };
 
-    socket.on("newComment", receberNovoComentario);
+    const receberComentarioEditado = (comentarioAtualizado) => {
+      if (comentarioAtualizado.post_id === postId) {
+        setComentarios((prev) =>
+          prev.map((c) =>
+            c.id === comentarioAtualizado.id ? comentarioAtualizado : c
+          )
+        );
+      }
+    };
 
-    return () => socket.off("newComment", receberNovoComentario);
+    const receberComentarioDeletado = (comentarioId) => {
+      setComentarios((prev) => prev.filter((c) => c.id !== comentarioId));
+    };
+
+    socket.on("newComment", receberNovoComentario);
+    socket.on("comentario_editado", receberComentarioEditado);
+    socket.on("comentario_deletado", receberComentarioDeletado);
+
+    return () => {
+      socket.off("newComment", receberNovoComentario);
+      socket.off("comentario_editado", receberComentarioEditado);
+      socket.off("comentario_deletado", receberComentarioDeletado);
+    };
   }, [postId, carregarComentarios]);
 
   const enviarComentario = async () => {
@@ -60,8 +74,9 @@ export default function CommentBox({ postId }) {
 
       if (!res.ok) throw new Error(await res.text());
 
-      setNovoComentario(""); 
-      carregarComentarios();
+      setNovoComentario("");
+      // Mantido para garantir que o autor veja seu próprio comentário
+      await carregarComentarios();
     } catch (err) {
       alert("Erro ao comentar: " + err.message);
     }
@@ -75,9 +90,11 @@ export default function CommentBox({ postId }) {
           Authorization: `Bearer ${token}`,
         },
       });
+
       if (!res.ok) throw new Error(await res.text());
+
       setMenuAbertoId(null);
-      carregarComentarios();
+      socket.emit("deletar_comentario", id);
     } catch (err) {
       alert("Erro ao apagar: " + err.message);
     }
@@ -94,8 +111,12 @@ export default function CommentBox({ postId }) {
         body: JSON.stringify({ conteudo }),
       });
       if (!res.ok) throw new Error(await res.text());
+
+      const atualizado = await res.json();
+      setComentarios((prev) =>
+        prev.map((c) => (c.id === atualizado.id ? atualizado : c))
+      );
       setEditando(null);
-      carregarComentarios();
     } catch (err) {
       alert("Erro ao editar: " + err.message);
     }

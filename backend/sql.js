@@ -29,10 +29,11 @@ export const createTables = () => {
     legenda TEXT,
     imagem_path TEXT,
     visibility TEXT NOT NULL DEFAULT 'public'
-    CHECK (visibility IN ('public','friends')),
+    CHECK (visibility IN ('public','friends','private')),
     created_at TEXT DEFAULT (datetime('now')),
     FOREIGN KEY (user_id) REFERENCES users(id)
 )`);
+
     // Tabela de amizades
     db.run(`CREATE TABLE IF NOT EXISTS friendships (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
