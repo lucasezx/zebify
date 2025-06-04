@@ -194,6 +194,3 @@ const NewPost = ({ onPostSuccess }) => {
 };
 
 export default NewPost;
-// O código acima é um componente React para criar novas postagens em uma rede social.
-// Ele permite que o usuário escolha entre postar texto ou imagem, defina a visibilidade (pública ou apenas amigos) e envie o conteúdo para o servidor.
-// O componente utiliza o estado local para gerenciar os dados do formulário e exibe mensagens de sucesso ou erro após a tentativa de publicação.

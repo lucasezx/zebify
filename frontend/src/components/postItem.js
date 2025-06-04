@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { updatePost, deletePost } from "../services/posts";
 import "../css/postOptions.css";
 
@@ -9,6 +9,22 @@ function PostItem({ post, onChange }) {
   const [msg, setMsg] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
   const [visMenuOpen, setVisMenuOpen] = useState(false);
+
+  const menuRef = useRef();
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setMenuOpen(false);
+        setVisMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   const user = JSON.parse(localStorage.getItem("user"));
 
@@ -92,15 +108,41 @@ function PostItem({ post, onChange }) {
         </>
       ) : (
         <>
-          <p>{post.conteudo}</p>
-          {post.legenda && <small>{post.legenda}</small>}
+          {post.tipo === "imagem" && post.imagem_path && (
+            <img
+              src={`http://localhost:3001/uploads/${post.imagem_path}`}
+              alt="imagem"
+              style={{
+                width: "100%",
+                maxWidth: "300px",
+                marginBottom: "10px",
+              }}
+            />
+          )}
+
+          <p style={{ position: "relative", marginBottom: "5px" }}>
+            {post.conteudo}
+            {post.updated_at && post.updated_at !== post.created_at && (
+              <span
+                style={{ fontSize: "12px", color: "#999", marginLeft: "8px" }}
+              >
+                (editado)
+              </span>
+            )}
+          </p>
+
+          {post.legenda && (
+            <small style={{ display: "block", color: "#555" }}>
+              {post.legenda}
+            </small>
+          )}
 
           {post.user_id === user?.id && (
             <div className="post-options">
               <button onClick={() => setMenuOpen(!menuOpen)}>⋯</button>
 
               {menuOpen && (
-                <div className="post-dropdown">
+                <div className="post-dropdown" ref={menuRef}>
                   <div
                     className="dropdown-item visibility-button"
                     onClick={() => setVisMenuOpen(!visMenuOpen)}

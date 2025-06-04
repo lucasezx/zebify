@@ -96,7 +96,13 @@ const PostList = ({ posts }) => (
           </>
         )}
 
-        <small>{new Date(post.created_at).toLocaleString()}</small>
+        <small>
+          {new Date(post.created_at).toLocaleString()}
+          {post.updated_at && post.updated_at !== post.created_at && (
+            <span style={{ marginLeft: "10px", color: "#888" }}>(editado)</span>
+          )}
+        </small>
+
         <CommentBox postId={post.id} />
       </div>
     ))}
