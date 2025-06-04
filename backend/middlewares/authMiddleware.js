@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 
-const JWT_SECRET = "zebify_super_secreto";
+const JWT_SECRET = process.env.JWT_SECRET || "zebify_super_secreto";
 
 export default function authenticateToken(req, res, next) {
   const authHeader = req.headers["authorization"];

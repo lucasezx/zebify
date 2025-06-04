@@ -2,7 +2,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { runQuery, allQuery } from "../sql.js";
 
-const JWT_SECRET = "zebify_super_secreto";
+const JWT_SECRET = process.env.JWT_SECRET || "zebify_super_secreto";
 
 export async function signup(req, res) {
   const { name, email, password } = req.body;

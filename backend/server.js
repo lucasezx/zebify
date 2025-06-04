@@ -7,11 +7,14 @@ import { createTables } from "./sql.js";
 import authenticateToken from "./middlewares/authMiddleware.js";
 import multer from "multer";
 import fs from "fs";
+import dotenv from "dotenv";
 
 import registerRoutes from "./routes/index.js";
 
+dotenv.config();
+
 const app = express();
-const port = 3001;
+const port = process.env.PORT || 3001;
 
 app.use(cors());
 app.use(express.json());
