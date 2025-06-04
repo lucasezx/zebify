@@ -28,11 +28,11 @@ const NewPost = ({ onPostSuccess }) => {
     formData.append("tipo", tipoFinal);
     formData.append("visibility", visibility);
 
-    if (content) {
+    if (tipoFinal === "texto") {
       formData.append("conteudo", content);
     }
 
-    if (image) {
+    if (tipoFinal === "imagem") {
       formData.append("imagem", image);
       formData.append("legenda", content);
     }
@@ -74,7 +74,7 @@ const NewPost = ({ onPostSuccess }) => {
     <div style={{ marginBottom: "30px" }}>
       <h3>Nova Publicação</h3>
 
-     <VisibilityToggle visibility={visibility} setVisibility={setVisibility} />
+      <VisibilityToggle visibility={visibility} setVisibility={setVisibility} />
 
       <div style={{ position: "relative", marginTop: "10px" }}>
         <textarea
