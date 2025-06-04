@@ -9,10 +9,7 @@ import fs from "fs";
 import { createTables } from "./sql.js";
 import authenticateToken from "./middlewares/authMiddleware.js";
 
-import registerAuthRoutes from "./routes/authRoutes.js";
-import registerPostRoutes from "./routes/postRoutes.js";
-import registerCommentRoutes from "./routes/commentRoutes.js";
-import registerFriendRoutes from "./routes/friendRoutes.js";
+import registerRoutes from "./routes/index.js";
 
 const app = express();
 const port = 3001;
@@ -82,10 +79,7 @@ app.get("/", (req, res) => {
   res.send("API do Zebify está funcionando!");
 });
 
-registerAuthRoutes(app);
-registerPostRoutes(app, authenticateToken, upload, io);
-registerCommentRoutes(app, authenticateToken, io);
-registerFriendRoutes(app, authenticateToken, io);
+registerRoutes(app, authenticateToken, upload, io);
 
 server.listen(port, () => {
   console.log(`Servidor HTTP e WebSocket rodando na porta ${port}`);
