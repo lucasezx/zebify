@@ -35,10 +35,7 @@ const Profile = () => {
   }, [user, token]);
 
   if (!user) return <Navigate to="/login" />;
-  console.table(
-    meusPosts.map((p) => ({ id: p.id, conteudo: p.conteudo?.slice(0, 30) }))
-  );
-
+  
   return (
     <>
       <div className="profile-container">
