@@ -3,19 +3,26 @@ import { createServer } from "http";
 import { Server } from "socket.io";
 import cors from "cors";
 import path from "path";
-import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
 import multer from "multer";
 import dotenv from "dotenv";
 import fs from "fs";
+
+
 global.io = null;
 dotenv.config();
 
-import { createTables, runQuery, allQuery } from "./sql.js";
+
+import { createTables } from "./sql.js";
+import authenticateToken from "./middlewares/authMiddleware.js";
+
+import registerRoutes from "./routes/index.js";
 
 const app = express();
+const port = 3001;
+
 const port = process.env.PORT || 3001;
 const JWT_SECRET = process.env.JWT_SECRET;
+
 
 app.use(cors());
 app.use(express.json());
@@ -37,19 +44,6 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-function authenticateToken(req, res, next) {
-  const authHeader = req.headers["authorization"];
-  const token = authHeader && authHeader.split(" ")[1];
-
-  if (!token) return res.sendStatus(401);
-
-  jwt.verify(token, JWT_SECRET, (err, user) => {
-    if (err) return res.sendStatus(403);
-    req.user = user;
-    next();
-  });
-}
-
 const server = createServer(app);
 
 const io = new Server(server, {
@@ -58,8 +52,6 @@ const io = new Server(server, {
     methods: ["GET", "POST"],
   },
 });
-
-global.io = io;
 
 io.on("connection", (socket) => {
   console.log("Cliente conectado via WebSocket");
@@ -96,6 +88,8 @@ io.on("connection", (socket) => {
 app.get("/", (req, res) => {
   res.send("API do Zebify está funcionando!");
 });
+
+registerRoutes(app, authenticateToken, upload, io);
 
 app.post("/signup", async (req, res) => {
   const { name, email, password } = req.body;
