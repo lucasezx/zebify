@@ -20,19 +20,19 @@ export const createTables = () => {
     password TEXT NOT NULL
     )`);
 
-    // Tabela de postagens
-    db.run(`CREATE TABLE IF NOT EXISTS posts (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    tipo TEXT NOT NULL CHECK(tipo IN ('texto','imagem')),
-    conteudo TEXT,
-    legenda TEXT,
-    imagem_path TEXT,
-    visibility TEXT NOT NULL DEFAULT 'public'
-    CHECK (visibility IN ('public','friends','private')),
-    created_at TEXT DEFAULT (datetime('now')),
-    FOREIGN KEY (user_id) REFERENCES users(id)
-)`);
+      // Tabela de postagens
+      db.run(`CREATE TABLE IF NOT EXISTS posts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      tipo TEXT NOT NULL CHECK(tipo IN ('texto','imagem')),
+      conteudo TEXT,
+      legenda TEXT,
+      imagem_path TEXT,
+      visibility TEXT NOT NULL DEFAULT 'public'
+      CHECK (visibility IN ('public','friends','private')),
+      created_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (user_id) REFERENCES users(id)
+  )`);
 
     // Tabela de amizades
     db.run(`CREATE TABLE IF NOT EXISTS friendships (
