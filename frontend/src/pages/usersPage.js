@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useAuth } from "../context/authContext";
+import socket from "../socket";
 
 const API = process.env.REACT_APP_API_URL ?? "http://localhost:3001";
 
@@ -23,7 +24,46 @@ const UsersPage = () => {
   }, [token]);
 
   useEffect(() => {
-    if (user) carregarUtilizadores();
+    if (user) {
+      carregarUtilizadores();
+
+      const meuId = user.id;
+
+      socket.on("pedido_enviado", ({ senderId, receiverId }) => {
+        if (meuId === senderId || meuId === receiverId) {
+          console.log("🔄 Atualizando lista (pedido enviado)");
+          carregarUtilizadores();
+        }
+      });
+
+      socket.on("pedido_cancelado", ({ senderId, receiverId }) => {
+        if (meuId === senderId || meuId === receiverId) {
+          console.log("🚫 Pedido cancelado — atualizando lista");
+          carregarUtilizadores();
+        }
+      });
+
+      socket.on("amizade_aceita", ({ userId1, userId2 }) => {
+        if (meuId === userId1 || meuId === userId2) {
+          console.log("✅ Amizade aceita — recarregando lista");
+          carregarUtilizadores();
+        }
+      });
+
+      socket.on("amizade_removida", ({ userId1, userId2 }) => {
+        if (meuId === userId1 || meuId === userId2) {
+          console.log("❌ Amizade removida — recarregando lista");
+          carregarUtilizadores();
+        }
+      });
+    }
+
+    return () => {
+      socket.off("pedido_enviado");
+      socket.off("pedido_cancelado");
+      socket.off("amizade_aceita");
+      socket.off("amizade_removida");
+    };
   }, [user, carregarUtilizadores]);
 
   const executarAcao = async (url, method = "POST", body = null) => {

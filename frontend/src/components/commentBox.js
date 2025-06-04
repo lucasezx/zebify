@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import socket from "../socket";
 
 const API = process.env.REACT_APP_API_URL ?? "http://localhost:3001";
@@ -94,7 +94,6 @@ export default function CommentBox({ postId }) {
       if (!res.ok) throw new Error(await res.text());
 
       setMenuAbertoId(null);
-      socket.emit("deletar_comentario", id);
     } catch (err) {
       alert("Erro ao apagar: " + err.message);
     }
@@ -121,6 +120,21 @@ export default function CommentBox({ postId }) {
       alert("Erro ao editar: " + err.message);
     }
   };
+
+  const menuRef = useRef();
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setMenuAbertoId(null);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   return (
     <div style={{ marginTop: "10px" }}>
@@ -170,6 +184,7 @@ export default function CommentBox({ postId }) {
                   </span>
                   {menuAbertoId === c.id && (
                     <div
+                      ref={menuRef}
                       style={{
                         position: "absolute",
                         backgroundColor: "#fff",

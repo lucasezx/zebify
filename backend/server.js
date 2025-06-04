@@ -6,14 +6,16 @@ import path from "path";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import multer from "multer";
+import dotenv from "dotenv";
 import fs from "fs";
 global.io = null;
+dotenv.config();
 
 import { createTables, runQuery, allQuery } from "./sql.js";
 
 const app = express();
-const port = 3001;
-const JWT_SECRET = "zebify_super_secreto";
+const port = process.env.PORT || 3001;
+const JWT_SECRET = process.env.JWT_SECRET;
 
 app.use(cors());
 app.use(express.json());
@@ -204,26 +206,36 @@ app.get("/api/posts", authenticateToken, async (req, res) => {
   try {
     const posts = await allQuery(
       `
-      SELECT p.*, u.name AS author
-      FROM posts p
-      JOIN users u ON u.id = p.user_id
+  SELECT 
+    p.id,
+    p.user_id,
+    p.tipo,
+    p.conteudo,
+    p.legenda,
+    p.imagem_path,
+    p.visibility,
+    p.created_at,
+    p.updated_at,
+    u.name AS author
+  FROM posts p
+  JOIN users u ON u.id = p.user_id
 
-      LEFT JOIN friendships f
-        ON (
-             (f.sender_id   = ? AND f.receiver_id = p.user_id)
-          OR (f.receiver_id = ? AND f.sender_id   = p.user_id)
-           )
-        AND f.status = 'aceito'
+  LEFT JOIN friendships f
+    ON (
+         (f.sender_id   = ? AND f.receiver_id = p.user_id)
+      OR (f.receiver_id = ? AND f.sender_id   = p.user_id)
+       )
+    AND f.status = 'aceito'
 
-      WHERE
-            p.visibility = 'public'
-         OR p.user_id = ?
-         OR (
-              p.visibility = 'friends'
-              AND f.id IS NOT NULL
-            )
-      ORDER BY p.created_at DESC
-      `,
+  WHERE
+        p.visibility = 'public'
+     OR p.user_id = ?
+     OR (
+          p.visibility = 'friends'
+          AND f.id IS NOT NULL
+        )
+  ORDER BY p.created_at DESC
+  `,
       [viewerId, viewerId, viewerId]
     );
 
@@ -260,7 +272,6 @@ app.post("/api/friends/request", authenticateToken, async (req, res) => {
   }
 
   try {
-    // Verifica se já existe amizade ou pedido
     const existentes = await allQuery(
       `SELECT * FROM friendships
        WHERE (sender_id = ? AND receiver_id = ?)
@@ -279,6 +290,13 @@ app.post("/api/friends/request", authenticateToken, async (req, res) => {
        VALUES (?, ?, 'pendente')`,
       [senderId, receiverId]
     );
+
+    if (global.io) {
+      global.io.emit("pedido_enviado", {
+        senderId,
+        receiverId,
+      });
+    }
 
     res.status(201).json({ message: "Pedido de amizade enviado!" });
   } catch (err) {
@@ -410,16 +428,15 @@ app.get("/api/users/with-status", authenticateToken, async (req, res) => {
 });
 
 app.post("/api/friends/reject", authenticateToken, async (req, res) => {
-  const receiverId = req.user.id;
-  const { senderId } = req.body;
+  const receiverId = req.user.id; // quem está a recusar
+  const { senderId } = req.body; // quem enviou o pedido
 
   try {
     const pedido = await allQuery(
-      `SELECT * FROM friendships
-      WHERE sender_id = ? AND receiver_id = ? AND status = 'pendente'`,
+      `SELECT 1 FROM friendships
+       WHERE sender_id = ? AND receiver_id = ? AND status = 'pendente'`,
       [senderId, receiverId]
     );
-
     if (!pedido.length) {
       return res
         .status(404)
@@ -428,9 +445,18 @@ app.post("/api/friends/reject", authenticateToken, async (req, res) => {
 
     await runQuery(
       `DELETE FROM friendships
-      WHERE sender_id = ? AND receiver_id = ? AND status = 'pendente'`,
+       WHERE sender_id = ? AND receiver_id = ? AND status = 'pendente'`,
       [senderId, receiverId]
     );
+
+    if (global.io) {
+      global.io.emit("pedido_cancelado", {
+        senderId: Number(senderId),
+        receiverId: Number(receiverId),
+      });
+
+      // global.io.emit("atualizar_feed");
+    }
 
     res.json({ message: "Pedido de amizade recusado." });
   } catch (err) {
@@ -500,22 +526,41 @@ app.get("/api/comments/:postId", async (req, res) => {
 app.put("/api/posts/:id", authenticateToken, async (req, res) => {
   const postId = req.params.id;
   const userId = req.user.id;
-  const { conteudo, legenda, visibility } = req.body;
+  let { conteudo, legenda, visibility } = req.body;
 
   const [post] = await allQuery(
     "SELECT * FROM posts WHERE id=? AND user_id=?",
     [postId, userId]
   );
+
   if (!post) return res.status(403).json({ error: "Sem permissão" });
 
+  // ✅ Normaliza valores: se não enviados, mantém os atuais
+  if (conteudo === undefined) conteudo = post.conteudo;
+  if (legenda === undefined) legenda = post.legenda;
+  if (visibility === undefined) visibility = post.visibility;
+
+  const conteudoOriginal = post.conteudo ?? "";
+  const legendaOriginal = post.legenda ?? "";
+
+  const conteudoMudou = (conteudo ?? "").trim() !== conteudoOriginal.trim();
+  const legendaMudou = (legenda ?? "").trim() !== legendaOriginal.trim();
+  const visibilidadeMudou = visibility !== post.visibility;
+
+  const atualizouConteudo = conteudoMudou || legendaMudou;
+  const atualizouAlgo = atualizouConteudo || visibilidadeMudou;
+
+  if (!atualizouAlgo) {
+    return res.json(post); // nada mudou
+  }
+
+  const updated_at_clause = atualizouConteudo
+    ? ", updated_at = datetime('now')"
+    : "";
+
   await runQuery(
-    "UPDATE posts SET conteudo=?, legenda=?, visibility=? WHERE id=?",
-    [
-      conteudo ?? post.conteudo,
-      legenda ?? post.legenda,
-      visibility ?? post.visibility,
-      postId,
-    ]
+    `UPDATE posts SET conteudo=?, legenda=?, visibility=? ${updated_at_clause} WHERE id=?`,
+    [conteudo, legenda, visibility, postId]
   );
 
   const [postAtualizado] = await allQuery(
@@ -526,10 +571,11 @@ app.put("/api/posts/:id", authenticateToken, async (req, res) => {
             p.imagem_path,
             p.visibility,
             p.created_at,
+            p.updated_at,
             u.name AS author
-       FROM posts p
-       JOIN users u ON u.id = p.user_id
-      WHERE p.id = ?`,
+     FROM posts p
+     JOIN users u ON u.id = p.user_id
+     WHERE p.id = ?`,
     [postId]
   );
 
@@ -587,17 +633,18 @@ app.delete("/api/posts/:id", authenticateToken, async (req, res) => {
 });
 
 app.delete("/api/friends/:id", authenticateToken, async (req, res) => {
-  const userId = req.user.id;
-  const otherId = req.params.id;
+  const userId = req.user.id; // quem clicou em "Remover amigo"
+  const otherId = Number(req.params.id); // garante que é número
 
   try {
+    // 1) Confirma se existe amizade
     const amizade = await allQuery(
       `SELECT * FROM friendships
        WHERE status = 'aceito'
-       AND (
-         (sender_id = ? AND receiver_id = ?)
-         OR (sender_id = ? AND receiver_id = ?)
-       )`,
+         AND (
+              (sender_id   = ? AND receiver_id = ?)
+           OR (sender_id   = ? AND receiver_id = ?)
+         )`,
       [userId, otherId, otherId, userId]
     );
 
@@ -605,26 +652,19 @@ app.delete("/api/friends/:id", authenticateToken, async (req, res) => {
       return res.status(404).json({ error: "Amizade não encontrada." });
     }
 
+    // 2) Remove a amizade
     await runQuery(
       `DELETE FROM friendships
-     WHERE (sender_id = ? AND receiver_id = ?)
-        OR (sender_id = ? AND receiver_id = ?)`,
+       WHERE (sender_id = ? AND receiver_id = ?)
+          OR (sender_id = ? AND receiver_id = ?)`,
       [userId, otherId, otherId, userId]
     );
 
-    // ── DEBUG opcional: garante que não restou nenhuma linha
-    const check = await allQuery(
-      `SELECT id FROM friendships
-     WHERE (sender_id = ? AND receiver_id = ?)
-        OR (sender_id = ? AND receiver_id = ?)`,
-      [userId, otherId, otherId, userId]
-    );
-    console.log("⚡ Restaram linhas de amizade:", check.length); // deve imprimir 0
-
-    // ── Emite eventos em tempo real
+    // 3) 🔔 Notifica ambos os utilizadores
     if (global.io) {
       global.io.emit("amizade_removida", { userId1: userId, userId2: otherId });
-      global.io.emit("atualizar_feed"); // 👈 força todos a recarregar o feed
+      // Opcional: se o feed depende da amizade
+      // global.io.emit("atualizar_feed");
     }
 
     res.json({ message: "Amizade removida com sucesso." });
@@ -635,14 +675,17 @@ app.delete("/api/friends/:id", authenticateToken, async (req, res) => {
 });
 
 app.delete("/api/friends/request/:id", authenticateToken, async (req, res) => {
-  const senderId = req.user.id;
-  const receiverId = req.params.id;
+  const userId = req.user.id;
+  const otherId = parseInt(req.params.id);
 
   try {
     const pedido = await allQuery(
       `SELECT * FROM friendships
-       WHERE sender_id = ? AND receiver_id = ? AND status = 'pendente'`,
-      [senderId, receiverId]
+       WHERE status = 'pendente' AND (
+         (sender_id = ? AND receiver_id = ?)
+         OR (sender_id = ? AND receiver_id = ?)
+       )`,
+      [userId, otherId, otherId, userId]
     );
 
     if (!pedido.length) {
@@ -652,9 +695,20 @@ app.delete("/api/friends/request/:id", authenticateToken, async (req, res) => {
     }
 
     await runQuery(
-      `DELETE FROM friendships WHERE sender_id = ? AND receiver_id = ? AND status = 'pendente'`,
-      [senderId, receiverId]
+      `DELETE FROM friendships
+       WHERE status = 'pendente' AND (
+         (sender_id = ? AND receiver_id = ?)
+         OR (sender_id = ? AND receiver_id = ?)
+       )`,
+      [userId, otherId, otherId, userId]
     );
+
+    if (global.io) {
+      global.io.emit("pedido_cancelado", {
+        senderId: userId,
+        receiverId: otherId,
+      });
+    }
 
     res.json({ message: "Pedido de amizade cancelado com sucesso." });
   } catch (err) {
@@ -679,10 +733,7 @@ app.delete("/api/comments/:id", authenticateToken, async (req, res) => {
 
     await runQuery(`DELETE FROM comments WHERE id = ?`, [commentId]);
 
-    global.io.emit("deletedComment", {
-      commentId: comment.id,
-      postId: comment.post_id,
-    });
+    global.io.emit("comentario_deletado", comment.id);
 
     res.json({ message: "Comentário deletado com sucesso." });
   } catch (err) {
