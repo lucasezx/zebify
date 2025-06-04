@@ -10,7 +10,9 @@ export function addComment(io) {
     }
 
     try {
-      const userInfo = await allQuery(`SELECT name FROM users WHERE id = ?`, [userId]);
+      const userInfo = await allQuery(`SELECT name FROM users WHERE id = ?`, [
+        userId,
+      ]);
       const result = await runQuery(
         `INSERT INTO comments (post_id, user_id, conteudo) VALUES (?, ?, ?)`,
         [postId, userId, conteudo]
@@ -59,7 +61,10 @@ export function updateComment(io) {
     );
     if (!own) return res.status(403).json({ error: "Sem permissão" });
 
-    await runQuery("UPDATE comments SET conteudo = ? WHERE id = ?", [conteudo, commentId]);
+    await runQuery("UPDATE comments SET conteudo = ? WHERE id = ?", [
+      conteudo,
+      commentId,
+    ]);
 
     const [comentario] = await allQuery(
       `SELECT c.*, u.name AS autor FROM comments c JOIN users u ON u.id = c.user_id WHERE c.id = ?`,
@@ -88,7 +93,7 @@ export function deleteComment(io) {
 
       await runQuery(`DELETE FROM comments WHERE id = ?`, [commentId]);
 
-      io.emit("deletedComment", { commentId: comment.id, postId: comment.post_id });
+      io.emit("comentario_deletado", comment.id);
 
       res.json({ message: "Comentário deletado com sucesso." });
     } catch (err) {
