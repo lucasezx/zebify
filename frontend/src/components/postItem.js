@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { updatePost, deletePost } from "../services/posts";
 import "../css/postOptions.css";
+import socket from "../socket";
 
 function PostItem({ post, onChange }) {
   const [editing, setEditing] = useState(false);
@@ -48,6 +49,7 @@ function PostItem({ post, onChange }) {
     if (!window.confirm("Tem certeza que deseja apagar?")) return;
     try {
       await deletePost(post.id);
+      socket.emit("postagem_deletada", post.id);
       onChange();
     } catch (e) {
       setMsg(e.message);
