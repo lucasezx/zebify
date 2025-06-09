@@ -1,28 +1,106 @@
 # Zebify
 
-Este repositório contém o frontend e o backend da aplicação Zebify.
+Zebify é uma aplicação fullstack que simula uma rede social, desenvolvida com Node.js no backend e React no frontend, estilizada com Tailwind CSS.
 
-## Configuração do Backend
+---
 
-Antes de iniciar o servidor é necessário criar um arquivo `.env` dentro da pasta `backend` com as seguintes variáveis (defina `JWT_SECRET` com uma chave de sua escolha):
+## 🧠 Estrutura do Projeto
+
 ```
-JWT_SECRET=<sua_chave_secreta>
+zebify/
+├── backend/       # API REST com Express e autenticação JWT
+├── frontend/      # Interface do usuário com React + Tailwind
+└── setup.sh       # Script para configuração automática em novas máquinas
+```
+
+---
+
+## ⚙️ Configuração Inicial
+
+### 1. Clone o repositório:
+
+```bash
+git clone https://github.com/lucasezx/zebify.git
+cd zebify
+```
+
+### 2. Rode o script de configuração:
+
+```bash
+./setup.sh
+```
+
+Esse script:
+
+- Usa Node.js v18 com `nvm`
+- Instala todas as dependências do frontend e backend
+- Prepara o ambiente em qualquer máquina nova
+
+---
+
+## 🔐 Configuração do Backend
+
+Crie um arquivo `.env` dentro da pasta `backend` com as seguintes variáveis:
+
+```env
+JWT_SECRET=<zebify_super_secreto>
 PORT=3001
 ```
 
-Este arquivo não é versionado e deve ser criado localmente.
+> Esse arquivo **não é versionado** por segurança (`.env` está incluído no `.gitignore`).
 
-Estas variáveis são utilizadas pelo `server.js` para configurar a porta e a chave do JWT.
+---
 
-Estas variáveis são utilizadas pelo `server.js` para configurar a porta e a chave do JWT.
+## 💻 Executar o Frontend
 
-## Frontend com Tailwind
+O frontend usa [Tailwind CSS](https://tailwindcss.com) para os estilos.
 
-O frontend utiliza [Tailwind CSS](https://tailwindcss.com) para os estilos.
-Dentro da pasta `frontend` rode `npm install` para garantir que as dependências
-de desenvolvimento estejam instaladas e, em seguida, `npm start` para iniciar a
-aplicação em modo de desenvolvimento.
+1. Acesse a pasta:
 
-Os estilos do Tailwind são definidos em `src/index.css` e compilados pelo
-`postcss` configurado em `postcss.config.js`.
->>>>>>> a6e1d9451fa232d4dcff0b57cf0e0e14cd61fa43
+```bash
+cd frontend
+```
+
+2. Inicie a aplicação:
+
+```bash
+npm start
+```
+
+Tailwind está configurado em:
+
+- `tailwind.config.js`
+- `postcss.config.js`
+- `src/index.css`
+
+---
+
+## 📦 Principais Tecnologias
+
+**Frontend**
+
+- React 18
+- React Router DOM
+- Tailwind CSS
+- Socket.IO Client
+
+**Backend**
+
+- Express
+- JSON Web Token (JWT)
+- bcrypt
+- dotenv
+
+---
+
+## ✅ Boas Práticas
+
+- Sempre use Node.js 18 (definido em `.nvmrc`)
+- Nunca envie `node_modules/` para o Git
+- Use `./setup.sh` sempre que mudar de máquina ou clonar o projeto
+
+---
+
+## 📄 Licença
+
+Projeto acadêmico desenvolvido com fins educacionais.
