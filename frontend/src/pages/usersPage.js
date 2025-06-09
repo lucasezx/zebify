@@ -58,6 +58,7 @@ const UsersPage = () => {
       });
     }
 
+
     return () => {
       socket.off("pedido_enviado");
       socket.off("pedido_cancelado");
