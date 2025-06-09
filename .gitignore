@@ -1,6 +1,24 @@
+# Ignorar o banco de dados local
 backend/database.db
-/node_modules
-frontend/node_modules
-backend/node_modules
-backend/uploads
+
+# Ignorar arquivos de ambiente
 backend/.env
+
+# Ignorar diretórios de dependências
+/node_modules
+frontend/node_modules/
+backend/node_modules/
+
+# Ignorar uploads e caches
+backend/uploads/
+frontend/.cache/
+frontend/node_modules/.cache/
+
+# Ignorar arquivos de log
+*.log
+npm-debug.log*
+
+# Ignorar sistema do editor (opcional, mas recomendado)
+.vscode/
+.idea/
+.DS_Store

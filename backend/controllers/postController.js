@@ -22,7 +22,14 @@ export async function createPost(req, res) {
   try {
     await runQuery(
       `INSERT INTO posts (user_id, tipo, conteudo, legenda, imagem_path, visibility) VALUES (?, ?, ?, ?, ?, ?)`,
-      [user_id, tipo, conteudo || null, legenda || null, imagem_path, visibility]
+      [
+        user_id,
+        tipo,
+        conteudo || null,
+        legenda || null,
+        imagem_path,
+        visibility,
+      ]
     );
 
     res.status(201).json({ message: "Publicação criada com sucesso!" });
@@ -108,23 +115,28 @@ export function updatePost(io) {
   };
 }
 
-export async function deletePost(req, res) {
-  const userId = req.user.id;
-  const postId = req.params.id;
+export function deletePost(io) {
+  return async function (req, res) {
+    const userId = req.user.id;
+    const postId = req.params.id;
 
-  try {
-    const post = await allQuery(
-      `SELECT * FROM posts WHERE id = ? AND user_id = ?`,
-      [postId, userId]
-    );
-    if (!post.length)
-      return res
-        .status(403)
-        .json({ error: "Sem permissão para deletar este post." });
+    try {
+      const post = await allQuery(
+        `SELECT * FROM posts WHERE id = ? AND user_id = ?`,
+        [postId, userId]
+      );
+      if (!post.length)
+        return res
+          .status(403)
+          .json({ error: "Sem permissão para deletar este post." });
 
-    await runQuery(`DELETE FROM posts WHERE id = ?`, [postId]);
-    res.json({ message: "Publicação deletada com sucesso!" });
-  } catch (err) {
-    res.status(500).json({ error: "Erro ao apagar publicação." });
-  }
+      await runQuery(`DELETE FROM posts WHERE id = ?`, [postId]);
+
+      io.emit("postagem_deletada", Number(postId));
+
+      res.json({ message: "Publicação deletada com sucesso!" });
+    } catch (err) {
+      res.status(500).json({ error: "Erro ao apagar publicação." });
+    }
+  };
 }
