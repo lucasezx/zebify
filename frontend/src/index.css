@@ -1,3 +1,10 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* TESTE: esta classe só existe se o Tailwind rodar */
+@layer utilities {
+  .debug-bg {
+    background: fuchsia !important;
+  }
+}

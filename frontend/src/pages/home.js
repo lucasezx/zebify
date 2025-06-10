@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import Footer from "../components/footer";
-import CommentBox from "../components/commentBox";
 import socket from "../socket";
+import PostCard from "../components/postCard";
 
 const API = process.env.REACT_APP_API_URL ?? "http://localhost:3001";
 
@@ -20,34 +20,20 @@ const Home = () => {
   useEffect(() => {
     fetchPosts();
 
-    socket.on("atualizar_feed", () => {
-      console.log("Recebido: atualizar_feed");
-      fetchPosts();
-    });
-
-    socket.on("postagem_editada", () => {
-      console.log("Post atualizado, recarregando feed...");
-      fetchPosts();
-    });
-
-    socket.on("postagem_deletada", (postId) => {
-      setPosts((prev) => prev.filter((p) => p.id !== postId));
-    });
+    socket.on("atualizar_feed", fetchPosts);
+    socket.on("postagem_editada", fetchPosts);
+    socket.on("postagem_deletada", (postId) =>
+      setPosts((prev) => prev.filter((p) => p.id !== postId))
+    );
 
     socket.on("amizade_aceita", ({ userId1, userId2 }) => {
       const meuId = JSON.parse(localStorage.getItem("user"))?.id;
-      if (meuId === userId1 || meuId === userId2) {
-        console.log("Amizade aceita, recarregando feed...");
-        fetchPosts();
-      }
+      if (meuId === userId1 || meuId === userId2) fetchPosts();
     });
 
     socket.on("amizade_removida", ({ userId1, userId2 }) => {
       const meuId = JSON.parse(localStorage.getItem("user"))?.id;
-      if (meuId === userId1 || meuId === userId2) {
-        console.log("Amizade removida — recarregando feed...");
-        fetchPosts();
-      }
+      if (meuId === userId1 || meuId === userId2) fetchPosts();
     });
 
     return () => {
@@ -60,61 +46,28 @@ const Home = () => {
   }, []);
 
   return (
-    <div style={{ padding: "20px", fontFamily: "sans-serif" }}>
-      <h1>Bem-vindo ao Zebify</h1>
-      <PostList posts={posts} />
-      <Footer />
-    </div>
-  );
-};
+  <main className="bg-gray-100 min-h-screen py-10">
+  <div className="max-w-3xl mx-auto px-4 space-y-6">
 
-const PostList = ({ posts }) => (
-  <div style={{ marginTop: "20px" }}>
-    {posts.map((post) => (
-      <div key={post.id} style={postStyle}>
-        <h2>
-          @{post.author}
-          {post.visibility === "friends" && (
-            <span
-              style={{ fontSize: "12px", color: "#777", marginLeft: "6px" }}
-            >
-              🔒 Apenas amigos
-            </span>
-          )}
-        </h2>
+        <h1 className="mb-6 text-3xl font-bold text-emerald-700">
+          Bem-vindo ao Zebify
+        </h1>
 
-        {post.tipo === "texto" && <p>{post.conteudo}</p>}
+        {posts.length === 0 ? (
+          <p className="text-gray-500">Carregando posts...</p>
+        ) : (
+          <section className="space-y-6">
+            {posts.map((post) => (
+              <PostCard key={post.id} post={post} onChange={fetchPosts} />
 
-        {post.tipo === "imagem" && (
-          <>
-            <img
-              src={`${API}/uploads/${post.imagem_path}`}
-              alt="imagem"
-              style={{ width: "100%", maxWidth: "400px" }}
-            />
-            <p>{post.legenda}</p>
-          </>
+            ))}
+          </section>
         )}
 
-        <small>
-          {new Date(post.created_at).toLocaleString()}
-          {post.updated_at && post.updated_at !== post.created_at && (
-            <span style={{ marginLeft: "10px", color: "#888" }}>(editado)</span>
-          )}
-        </small>
-
-        <CommentBox postId={post.id} />
+        <Footer />
       </div>
-    ))}
-  </div>
-);
-
-const postStyle = {
-  border: "1px solid #ccc",
-  padding: "15px",
-  borderRadius: "8px",
-  marginBottom: "15px",
-  backgroundColor: "#f9f9f9",
+    </main>
+  );
 };
 
 export default Home;
