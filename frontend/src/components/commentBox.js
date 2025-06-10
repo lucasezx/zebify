@@ -10,6 +10,7 @@ export default function CommentBox({ postId }) {
   const [menuAbertoId, setMenuAbertoId] = useState(null);
   const token = localStorage.getItem("token");
   const user = JSON.parse(localStorage.getItem("user"));
+  const menuRef = useRef();
 
   const carregarComentarios = useCallback(async () => {
     try {
@@ -25,38 +26,34 @@ export default function CommentBox({ postId }) {
   }, [postId]);
 
   useEffect(() => {
-    if (postId) {
-      carregarComentarios();
-    }
+    if (postId) carregarComentarios();
 
-    const receberNovoComentario = (data) => {
+    const novo = (data) => {
       if (data.postId === postId) {
         setComentarios((prev) => [...prev, { ...data, autor: data.user_name }]);
       }
     };
 
-    const receberComentarioEditado = (comentarioAtualizado) => {
-      if (comentarioAtualizado.post_id === postId) {
+    const editado = (comentario) => {
+      if (comentario.post_id === postId) {
         setComentarios((prev) =>
-          prev.map((c) =>
-            c.id === comentarioAtualizado.id ? comentarioAtualizado : c
-          )
+          prev.map((c) => (c.id === comentario.id ? comentario : c))
         );
       }
     };
 
-    const receberComentarioDeletado = (comentarioId) => {
-      setComentarios((prev) => prev.filter((c) => c.id !== comentarioId));
+    const deletado = (id) => {
+      setComentarios((prev) => prev.filter((c) => c.id !== id));
     };
 
-    socket.on("newComment", receberNovoComentario);
-    socket.on("comentario_editado", receberComentarioEditado);
-    socket.on("comentario_deletado", receberComentarioDeletado);
+    socket.on("newComment", novo);
+    socket.on("comentario_editado", editado);
+    socket.on("comentario_deletado", deletado);
 
     return () => {
-      socket.off("newComment", receberNovoComentario);
-      socket.off("comentario_editado", receberComentarioEditado);
-      socket.off("comentario_deletado", receberComentarioDeletado);
+      socket.off("newComment", novo);
+      socket.off("comentario_editado", editado);
+      socket.off("comentario_deletado", deletado);
     };
   }, [postId, carregarComentarios]);
 
@@ -71,11 +68,8 @@ export default function CommentBox({ postId }) {
         },
         body: JSON.stringify({ postId, conteudo: novoComentario }),
       });
-
       if (!res.ok) throw new Error(await res.text());
-
       setNovoComentario("");
-      // Mantido para garantir que o autor veja seu próprio comentário
       await carregarComentarios();
     } catch (err) {
       alert("Erro ao comentar: " + err.message);
@@ -86,13 +80,9 @@ export default function CommentBox({ postId }) {
     try {
       const res = await fetch(`${API}/api/comments/${id}`, {
         method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
-
       if (!res.ok) throw new Error(await res.text());
-
       setMenuAbertoId(null);
     } catch (err) {
       alert("Erro ao apagar: " + err.message);
@@ -110,7 +100,6 @@ export default function CommentBox({ postId }) {
         body: JSON.stringify({ conteudo }),
       });
       if (!res.ok) throw new Error(await res.text());
-
       const atualizado = await res.json();
       setComentarios((prev) =>
         prev.map((c) => (c.id === atualizado.id ? atualizado : c))
@@ -121,115 +110,113 @@ export default function CommentBox({ postId }) {
     }
   };
 
-  const menuRef = useRef();
-
   useEffect(() => {
-    const handleClickOutside = (e) => {
+    const clickOutside = (e) => {
       if (menuRef.current && !menuRef.current.contains(e.target)) {
         setMenuAbertoId(null);
       }
     };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    document.addEventListener("mousedown", clickOutside);
+    return () => document.removeEventListener("mousedown", clickOutside);
   }, []);
 
   return (
-    <div style={{ marginTop: "10px" }}>
-      <h4>Comentários</h4>
-      {comentarios.map((c) => (
-        <div
-          key={c.id}
-          style={{
-            marginBottom: "8px",
-            paddingLeft: "10px",
-            borderLeft: "2px solid #ccc",
-            position: "relative",
-          }}
-        >
-          <strong>{c.autor}:</strong>{" "}
-          {editando?.id === c.id ? (
-            <>
-              <input
-                type="text"
-                value={editando.conteudo}
-                onChange={(e) =>
-                  setEditando({ ...editando, conteudo: e.target.value })
-                }
-                style={{ marginRight: "5px" }}
-              />
-              <button onClick={() => salvarEdicao(c.id, editando.conteudo)}>
-                Salvar
-              </button>
-              <button onClick={() => setEditando(null)}>Cancelar</button>
-            </>
-          ) : (
-            <>
-              <span>{c.conteudo}</span>
-              {user?.id === c.user_id && (
-                <div style={{ display: "inline-block", marginLeft: "10px" }}>
-                  <span
-                    style={{
-                      cursor: "pointer",
-                      fontWeight: "bold",
-                      padding: "0 5px",
-                    }}
-                    onClick={() =>
-                      setMenuAbertoId(menuAbertoId === c.id ? null : c.id)
+    <div className="mt-4 space-y-4">
+      {comentarios.length > 0 && (
+        <div className="space-y-3 text-sm text-gray-800">
+          {comentarios.map((c) => (
+            <div key={c.id} className="relative border-l-2 border-gray-300 pl-3">
+              <strong>{c.autor}:</strong>{" "}
+              {editando?.id === c.id ? (
+                <div className="mt-1 space-y-1">
+                  <input
+                    type="text"
+                    value={editando.conteudo}
+                    onChange={(e) =>
+                      setEditando({ ...editando, conteudo: e.target.value })
                     }
-                  >
-                    ⋯
-                  </span>
-                  {menuAbertoId === c.id && (
-                    <div
-                      ref={menuRef}
-                      style={{
-                        position: "absolute",
-                        backgroundColor: "#fff",
-                        border: "1px solid #ccc",
-                        padding: "5px",
-                        borderRadius: "4px",
-                        top: "20px",
-                        left: "60px",
-                        zIndex: 100,
-                      }}
+                    className="w-full border border-gray-300 rounded px-2 py-1 text-sm"
+                  />
+                  <div className="flex gap-2 mt-1">
+                    <button
+                      onClick={() => salvarEdicao(c.id, editando.conteudo)}
+                      className="px-3 py-1 bg-emerald-500 text-white text-sm rounded hover:bg-emerald-600"
                     >
-                      <div
-                        onClick={() => {
-                          setEditando({ id: c.id, conteudo: c.conteudo });
-                          setMenuAbertoId(null);
-                        }}
-                        style={{ cursor: "pointer", marginBottom: "4px" }}
+                      Salvar
+                    </button>
+                    <button
+                      onClick={() => setEditando(null)}
+                      className="px-3 py-1 bg-gray-300 text-gray-800 text-sm rounded hover:bg-gray-400"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <span>{c.conteudo}</span>
+                  {user?.id === c.user_id && (
+                    <div className="inline-block ml-2 relative">
+                      <span
+                        className="cursor-pointer font-bold px-2"
+                        onClick={() =>
+                          setMenuAbertoId(menuAbertoId === c.id ? null : c.id)
+                        }
                       >
-                        Editar
-                      </div>
-                      <div
-                        onClick={() => apagarComentario(c.id)}
-                        style={{ cursor: "pointer", color: "red" }}
-                      >
-                        Apagar
-                      </div>
+                        ⋯
+                      </span>
+                      {menuAbertoId === c.id && (
+                        <div
+                          ref={menuRef}
+                          className="absolute z-10 left-6 top-5 bg-white border border-gray-300 rounded shadow-sm text-sm"
+                        >
+                          <div
+                            onClick={() => {
+                              setEditando({ id: c.id, conteudo: c.conteudo });
+                              setMenuAbertoId(null);
+                            }}
+                            className="cursor-pointer px-3 py-1 hover:bg-gray-100"
+                          >
+                            Editar
+                          </div>
+                          <div
+                            onClick={() => apagarComentario(c.id)}
+                            className="cursor-pointer px-3 py-1 text-red-600 hover:bg-red-100"
+                          >
+                            Apagar
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
-                </div>
+                </>
               )}
-            </>
-          )}
+            </div>
+          ))}
         </div>
-      ))}
+      )}
 
-      <div style={{ marginTop: "10px" }}>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          enviarComentario();
+        }}
+        className="flex items-center gap-2"
+      >
         <input
           type="text"
           value={novoComentario}
           onChange={(e) => setNovoComentario(e.target.value)}
           placeholder="Escreva um comentário..."
-          style={{ width: "80%", marginRight: "5px" }}
+          className="flex-1 border border-gray-300 rounded px-3 py-2 text-sm shadow-sm focus:outline-none focus:border-emerald-500"
         />
-        <button onClick={enviarComentario}>Comentar</button>
-      </div>
+        <button
+          type="submit"
+          className="bg-emerald-500 hover:bg-emerald-600 text-white text-sm px-4 py-2 rounded"
+        >
+          Comentar
+        </button>
+      </form>
     </div>
   );
 }

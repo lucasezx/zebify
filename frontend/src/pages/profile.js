@@ -3,7 +3,7 @@ import { useAuth } from "../context/authContext";
 import { Navigate } from "react-router-dom";
 import "../css/profile.css";
 import Footer from "../components/footer";
-import PostItem from "../components/postItem";
+import PostCard from "../components/postCard";
 
 const API = process.env.REACT_APP_API_URL ?? "http://localhost:3001";
 
@@ -49,7 +49,7 @@ const Profile = () => {
 
         <h2 style={{ marginTop: "30px" }}>Minhas Publicações</h2>
         {meusPosts.map((post) => (
-          <PostItem
+          <PostCard
             key={post.id}
             post={post}
             onChange={async () => {
