@@ -9,7 +9,6 @@ import Welcome from "./pages/welcome";
 import PrivateRoute from "./components/privateRoute";
 import UsersPage from "./pages/usersPage";
 import NewPostPage from "./pages/newPostPage";
-import "./css/style.css";
 
 function App() {
   return (

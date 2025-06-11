@@ -2,7 +2,6 @@ import React, { useEffect, useState, useCallback } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/authContext";
 import { FaUsers, FaHome, FaUser, FaPlus } from "react-icons/fa";
-import "../css/navbar.css";
 
 const API = process.env.REACT_APP_API_URL ?? "http://localhost:3001";
 
@@ -51,76 +50,77 @@ const Navbar = () => {
     navigate("/login");
   };
 
-  const Item = ({ Icon, to, badge, title }) => (
-    <div
-      onClick={() => navigate(to)}
-      style={{ position: "relative", marginRight: "18px", cursor: "pointer" }}
-      title={title}
-    >
-      <Icon
-        size={22}
-        color={location.pathname === to ? "#4287f5" : undefined}
-      />
-      {badge > 0 && (
-        <span
-          style={{
-            position: "absolute",
-            top: "-6px",
-            right: "-8px",
-            background: "red",
-            color: "white",
-            borderRadius: "50%",
-            padding: "2px 6px",
-            fontSize: "11px",
-            fontWeight: "bold",
-          }}
-        >
-          {badge}
-        </span>
-      )}
-    </div>
-  );
+  const Item = ({ Icon, to, badge, title }) => {
+    const isActive = location.pathname === to;
+    return (
+      <div
+        onClick={() => navigate(to)}
+        className="relative cursor-pointer mx-2"
+        title={title}
+      >
+        <Icon
+          size={22}
+          className={isActive ? "text-emerald-600" : "text-gray-700"}
+        />
+        {badge > 0 && (
+          <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[11px] font-bold px-1.5 py-0.5 rounded-full">
+            {badge}
+          </span>
+        )}
+      </div>
+    );
+  };
 
   const isAuthPage = ["/login", "/signup"].includes(location.pathname);
 
   return (
-    <nav className="navbar">
-      <div className="navbar-left">
-        <span className="logo" onClick={() => navigate("/")}>
-          Zebify
-        </span>
-      </div>
+    <nav className="bg-white shadow-md px-4 py-3 flex justify-between items-center">
+      <span
+        className="text-xl font-bold text-emerald-600 cursor-pointer"
+        onClick={() => navigate("/")}
+      >
+        Zebify
+      </span>
 
-      <div className="navbar-right">
-        {user && !isAuthPage ? (
-          <>
-            <Item Icon={FaHome} to="/" title="Feed" />
-
-            <Item Icon={FaPlus} to="/new-post" title="Nova publicação" />
-
-            <Item
-              Icon={FaUsers}
-              to="/users"
-              badge={pedidos}
-              title="Utilizadores / Pedidos"
-            />
-
-            <Item Icon={FaUser} to="/profile" title="Perfil" />
-
-            <span className="welcome">Olá, {user.name}</span>
-            <button className="btn-sair" onClick={handleLogout}>
-              Sair
-            </button>
-          </>
-        ) : (
-          !isAuthPage && (
+      {!isAuthPage && (
+        <div className="flex items-center gap-4">
+          {user ? (
             <>
-              <Link to="/login">Login</Link>
-              <Link to="/signup">Registo</Link>
+              <Item Icon={FaHome} to="/" title="Feed" />
+              <Item Icon={FaPlus} to="/new-post" title="Nova publicação" />
+              <Item
+                Icon={FaUsers}
+                to="/users"
+                badge={pedidos}
+                title="Utilizadores / Pedidos"
+              />
+              <Item Icon={FaUser} to="/profile" title="Perfil" />
+              <span className="text-sm text-gray-700">Olá, {user.name}</span>
+              <button
+                onClick={handleLogout}
+                className="ml-2 bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 text-sm transition"
+              >
+                Sair
+              </button>
             </>
-          )
-        )}
-      </div>
+          ) : (
+            <>
+              <Link
+                to="/login"
+                className="text-gray-700 hover:text-emerald-600 font-medium"
+              >
+                Login
+              </Link>
+              <Link
+                to="/signup"
+                className="text-gray-700 hover:text-emerald-600 font-medium"
+              >
+                Registo
+              </Link>
+            </>
+          )}
+        </div>
+      )}
     </nav>
   );
 };

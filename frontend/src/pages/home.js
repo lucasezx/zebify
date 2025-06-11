@@ -46,20 +46,25 @@ const Home = () => {
   }, []);
 
   return (
-  <main className="bg-gray-100 min-h-screen py-10">
-  <div className="max-w-3xl mx-auto px-4 space-y-6">
-
-        <h1 className="mb-6 text-3xl font-bold text-emerald-700">
-          Bem-vindo ao Zebify
-        </h1>
+    <main className="bg-gray-100 min-h-screen py-10">
+      <div className="max-w-3xl mx-auto px-4 space-y-8">
+        <header>
+          <h1 className="text-3xl font-bold text-emerald-700">
+            Bem-vindo ao Zebify
+          </h1>
+          <p className="text-sm text-gray-500">
+            Veja as últimas publicações dos seus amigos
+          </p>
+        </header>
 
         {posts.length === 0 ? (
-          <p className="text-gray-500">Carregando posts...</p>
+          <div className="text-center py-10 text-gray-500 animate-pulse">
+            Carregando posts...
+          </div>
         ) : (
           <section className="space-y-6">
             {posts.map((post) => (
               <PostCard key={post.id} post={post} onChange={fetchPosts} />
-
             ))}
           </section>
         )}

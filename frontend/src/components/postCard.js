@@ -5,7 +5,7 @@ import socket from "../socket";
 
 const API = process.env.REACT_APP_API_URL ?? "http://localhost:3001";
 
-export default function PostCard({ post, onChange }) {
+export default function PostCard({ post, onChange, isOwner = false }) {
   const [editing, setEditing] = useState(false);
   const [conteudo, setConteudo] = useState(post.conteudo ?? "");
   const [legenda, setLegenda] = useState(post.legenda ?? "");
@@ -68,26 +68,33 @@ export default function PostCard({ post, onChange }) {
   };
 
   return (
-    <article className="bg-white rounded-lg border border-gray-200 p-6 shadow-md space-y-4">
-      <header className="flex justify-between text-sm text-gray-500">
-        <div className="flex items-center gap-2">
-          <span className="font-semibold text-gray-800">@{post.author}</span>
+    <article className="bg-green-500 text-white text-3xl font-bold p-8 rounded-3xl shadow-2xl border-4 border-yellow-400">
+  ESTILOS TAILWIND FUNCIONAM?
+
+      <header className="flex justify-between items-start">
+        <div>
+          <p className="text-xl font-bold text-gray-800">@{post.author}</p>
           {post.visibility && (
-            <span className="inline-flex items-center gap-1 rounded bg-yellow-100 text-yellow-800 px-2 py-0.5 text-xs">
+            <span className="text-sm text-blue-600">
               {visibilityIcons[post.visibility]}
             </span>
           )}
         </div>
-        {post.user_id === user?.id && (
+        <div className="debug-bg p-4">
+  Conteúdo de teste
+</div>
+
+
+        {isOwner && post.user_id === user?.id && (
           <div className="relative" ref={menuRef}>
             <button
               onClick={() => setMenuOpen(!menuOpen)}
-              className="px-2 text-lg font-bold text-gray-700 hover:text-black"
+              className="text-xl font-bold text-gray-600 hover:text-black"
             >
               ⋯
             </button>
             {menuOpen && (
-              <div className="absolute right-0 z-10 mt-2 w-48 rounded-md border bg-white shadow-md">
+              <div className="absolute right-0 mt-2 w-44 bg-white border rounded-md shadow-lg z-50">
                 <button
                   onClick={() => setVisMenuOpen(!visMenuOpen)}
                   className="block w-full px-4 py-2 text-left text-sm hover:bg-gray-100"
@@ -95,13 +102,15 @@ export default function PostCard({ post, onChange }) {
                   {visibilityIcons[post.visibility]} ▼
                 </button>
                 {visMenuOpen && (
-                  <div className="bg-white border-t">
+                  <div className="border-t">
                     {Object.entries(visibilityIcons).map(([key, label]) => (
                       <div
                         key={key}
                         onClick={() => atualizarVisibilidade(key)}
                         className={`px-4 py-2 text-sm cursor-pointer hover:bg-gray-100 ${
-                          post.visibility === key ? "font-semibold text-emerald-600" : ""
+                          post.visibility === key
+                            ? "font-semibold text-emerald-600"
+                            : ""
                         }`}
                       >
                         {label}
@@ -128,21 +137,20 @@ export default function PostCard({ post, onChange }) {
       </header>
 
       {editing ? (
-        <>
+        <div className="space-y-3">
           {post.tipo === "texto" && (
             <textarea
               value={conteudo}
               onChange={(e) => setConteudo(e.target.value)}
-              className="w-full border rounded px-3 py-2 text-sm"
+              className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
             />
           )}
-
           {post.tipo === "imagem" && (
             <>
               <img
                 src={`${API}/uploads/${post.imagem_path}`}
                 alt="imagem"
-                className="rounded w-full max-w-md mb-2"
+                className="rounded-lg w-full max-w-md mx-auto"
               />
               <input
                 type="text"
@@ -153,8 +161,7 @@ export default function PostCard({ post, onChange }) {
               />
             </>
           )}
-
-          <div className="flex gap-2 mt-2">
+          <div className="flex gap-2">
             <button
               onClick={salvar}
               className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-1 rounded text-sm"
@@ -169,30 +176,33 @@ export default function PostCard({ post, onChange }) {
             </button>
           </div>
           {msg && <p className="text-red-500 text-sm mt-1">{msg}</p>}
-        </>
+        </div>
       ) : (
-        <>
+        <div className="space-y-2">
           {post.tipo === "imagem" && post.imagem_path && (
             <img
               src={`${API}/uploads/${post.imagem_path}`}
               alt="imagem"
-              className="rounded w-full max-w-md mb-2"
+              className="rounded-lg w-full max-w-md mx-auto"
             />
           )}
           {post.conteudo && (
-            <p className="text-gray-800 text-base">
+            <p className="text-gray-800 text-base whitespace-pre-wrap leading-relaxed">
               {post.conteudo}
-              {post.updated_at && post.updated_at !== post.created_at && (
-                <span className="ml-2 text-xs text-gray-400">(editado)</span>
-              )}
             </p>
           )}
           {post.legenda && (
-            <p className="text-sm text-gray-500">{post.legenda}</p>
+            <p className="text-sm text-gray-500 italic">{post.legenda}</p>
           )}
-          <CommentBox postId={post.id} />
-        </>
+        </div>
       )}
+
+      <section className="pt-4 border-t">
+        <h3 className="text-sm font-semibold text-gray-700 mb-2">
+          Comentários
+        </h3>
+        <CommentBox postId={post.id} />
+      </section>
     </article>
   );
 }
