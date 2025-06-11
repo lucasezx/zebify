@@ -46,4 +46,4 @@ else
 fi
 
 echo "✅ Ambiente configurado com sucesso!"
-echo "➡️  Agora você pode rodar: cd frontend && npm start"
+echo "➡️  Agora você pode rodar: cd frontend && npm run dev"
