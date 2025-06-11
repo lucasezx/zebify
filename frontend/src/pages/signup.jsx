@@ -33,10 +33,12 @@ export default function Signup() {
   };
 
   return (
-    <div className="login-page">
-      <div className="login-box">
-        <h2>Cadastro</h2>
-        <form onSubmit={handleSubmit}>
+    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
+        <h2 className="text-2xl font-bold mb-6 text-center text-green-600">
+          Cadastro
+        </h2>
+        <form onSubmit={handleSubmit} className="space-y-4">
           <input
             type="text"
             name="name"
@@ -44,6 +46,7 @@ export default function Signup() {
             value={form.name}
             onChange={handleChange}
             required
+            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-400"
           />
           <input
             type="email"
@@ -52,6 +55,7 @@ export default function Signup() {
             value={form.email}
             onChange={handleChange}
             required
+            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-400"
           />
           <input
             type="password"
@@ -60,13 +64,26 @@ export default function Signup() {
             value={form.password}
             onChange={handleChange}
             required
+            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-400"
           />
-          <button type="submit">Registar</button>
-          <p>
-            Já tem uma conta? <a href="/login">Entrar</a>
+          <button
+            type="submit"
+            className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-md transition"
+          >
+            Registar
+          </button>
+          <p className="text-sm text-center text-gray-600">
+            Já tem uma conta?{" "}
+            <a href="/login" className="text-green-600 hover:underline">
+              Entrar
+            </a>
           </p>
         </form>
-        {mensagem && <p>{mensagem}</p>}
+        {mensagem && (
+          <p className="mt-4 text-center text-red-600 font-medium">
+            {mensagem}
+          </p>
+        )}
       </div>
     </div>
   );
