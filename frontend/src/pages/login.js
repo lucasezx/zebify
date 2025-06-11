@@ -1,7 +1,6 @@
   import React, { useState } from "react";
   import { useNavigate } from "react-router-dom";
   import { useAuth } from "../context/authContext.js";
-  import "../css/style.css";
   import "../components/footer";
   import Footer from "../components/footer";
 
