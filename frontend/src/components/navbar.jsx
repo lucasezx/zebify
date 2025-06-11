@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/authContext";
 import { FaUsers, FaHome, FaUser, FaPlus } from "react-icons/fa";
+import logoTexto from "../../assets/logoTexto.png";
 
 const API = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
 
@@ -75,12 +76,12 @@ const Navbar = () => {
 
   return (
     <nav className="bg-white shadow-md px-4 py-3 flex justify-between items-center">
-      <span
-        className="text-xl font-bold text-emerald-600 cursor-pointer"
+      <img
+        src={logoTexto}
+        alt="Zebify"
         onClick={() => navigate("/")}
-      >
-        Zebify
-      </span>
+        className="h-10 cursor-pointer"
+      />
 
       {!isAuthPage && (
         <div className="flex items-center gap-4">
