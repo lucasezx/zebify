@@ -9,3 +9,18 @@
     @apply bg-gray-100 text-gray-800 font-sans;
   }
 }
+
+/* Oculta o botão nativo "mostrar senha" do Chrome/Edge */
+input::-ms-reveal,
+input::-ms-clear {
+  display: none;
+}
+
+input::-webkit-credentials-auto-fill-button {
+  display: none;
+  visibility: hidden;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+}
+

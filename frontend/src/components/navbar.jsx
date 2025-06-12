@@ -96,7 +96,10 @@ const Navbar = () => {
                 title="Utilizadores / Pedidos"
               />
               <Item Icon={FaUser} to="/profile" title="Perfil" />
-              <span className="text-sm text-gray-700">Olá, {user.name}</span>
+              <span className="text-sm text-gray-700">
+                Olá, {user.firstName} {user.lastName}
+              </span>
+
               <button
                 onClick={handleLogout}
                 className="ml-2 bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 text-sm transition"

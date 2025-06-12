@@ -3,23 +3,32 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/authContext";
 import Footer from "../components/footer";
 import logo from "../../assets/logo.png";
+import { Link } from "react-router-dom";
 
 const Login = () => {
-  const [email, setEmail] = useState("");
+  const [contact, setContact] = useState("");
   const [password, setPassword] = useState("");
   const [mensagem, setMensagem] = useState("");
   const navigate = useNavigate();
   const { login } = useAuth();
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = async () => {
     try {
       const res = await fetch("http://localhost:3001/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ contact, password }),
       });
 
       const data = await res.json();
+
+      if (res.ok && data.user && data.user.verified === false) {
+        setMensagem(
+          "Por favor, confirme o código enviado antes de fazer login."
+        );
+        return;
+      }
 
       if (res.ok) {
         login(data.user);
@@ -46,25 +55,33 @@ const Login = () => {
         </div>
 
         <div className="bg-white p-10 rounded-2xl shadow-2xl border border-gray-300 w-full md:w-1/3 ring-1 ring-green-200">
-
           <form onSubmit={(e) => e.preventDefault()} className="space-y-4">
             <input
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              type="text"
+              placeholder="Email ou número de telemóvel"
+              value={contact}
+              onChange={(e) => setContact(e.target.value)}
               required
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-400 focus:outline-none"
             />
 
-            <input
-              type="password"
-              placeholder="Senha"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-400 focus:outline-none"
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder="Senha"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="w-full px-4 py-2 border border-gray-300 rounded-md pr-10 focus:ring-2 focus:ring-green-400 focus:outline-none"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-sm text-gray-500"
+              >
+                {showPassword ? "Ocultar" : "Mostrar"}
+              </button>
+            </div>
 
             <button
               onClick={handleLogin}
@@ -81,7 +98,21 @@ const Login = () => {
             </a>
 
             {mensagem && (
-              <p className="text-center text-red-600 font-medium">{mensagem}</p>
+              <>
+                <p className="text-center text-red-600 font-medium">
+                  {mensagem}
+                </p>
+                {mensagem.includes("não verificada") && (
+                  <p className="text-center mt-2 text-sm text-gray-600">
+                    <Link
+                      to="/verify"
+                      className="text-green-600 hover:underline"
+                    >
+                      Verificar agora
+                    </Link>
+                  </p>
+                )}
+              </>
             )}
           </form>
         </div>

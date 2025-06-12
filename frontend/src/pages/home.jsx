@@ -7,14 +7,32 @@ const API = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
 
 const Home = () => {
   const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [erro, setErro] = useState("");
 
   const fetchPosts = async () => {
     const token = localStorage.getItem("token");
-    const res = await fetch(`${API}/api/posts`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const data = await res.json();
-    setPosts(data);
+
+    try {
+      const res = await fetch(`${API}/api/posts`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error || "Erro ao carregar posts.");
+
+      if (Array.isArray(data)) {
+        setPosts(data);
+        setErro("");
+      } else {
+        throw new Error("Resposta inesperada do servidor.");
+      }
+    } catch (err) {
+      setErro(err.message);
+      setPosts([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -52,18 +70,20 @@ const Home = () => {
           <h1 className="text-3xl font-bold text-emerald-700">
             Bem-vindo ao Zebify
           </h1>
-          <div className="bg-green-500 text-white p-4 rounded-lg">
-  Tailwind funcionando 🎉
-</div>
-
           <p className="text-sm text-gray-500">
             Veja as últimas publicações dos seus amigos
           </p>
         </header>
 
-        {posts.length === 0 ? (
+        {loading ? (
           <div className="text-center py-10 text-gray-500 animate-pulse">
             Carregando posts...
+          </div>
+        ) : erro ? (
+          <div className="text-center py-10 text-red-500">{erro}</div>
+        ) : posts.length === 0 ? (
+          <div className="text-center py-10 text-gray-500">
+            Nenhuma publicação ainda.
           </div>
         ) : (
           <section className="space-y-6">

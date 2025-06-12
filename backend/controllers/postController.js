@@ -44,7 +44,7 @@ export async function getPosts(req, res) {
   try {
     const posts = await allQuery(
       `
-      SELECT p.*, u.name AS author
+      SELECT p.*, u.first_name || ' ' || u.last_name AS author
       FROM posts p
       JOIN users u ON u.id = p.user_id
       LEFT JOIN friendships f ON ((f.sender_id = ? AND f.receiver_id = p.user_id) OR (f.receiver_id = ? AND f.sender_id = p.user_id)) AND f.status = 'aceito'

@@ -15,7 +15,9 @@ export async function requestFriend(req, res) {
     );
 
     if (existentes.length > 0) {
-      return res.status(409).json({ error: "Já existe pedido ou amizade entre os utilizadores." });
+      return res
+        .status(409)
+        .json({ error: "Já existe pedido ou amizade entre os utilizadores." });
     }
 
     await runQuery(
@@ -42,7 +44,9 @@ export function acceptFriend(io) {
       );
 
       if (pedido.length === 0) {
-        return res.status(404).json({ error: "Pedido de amizade não encontrado." });
+        return res
+          .status(404)
+          .json({ error: "Pedido de amizade não encontrado." });
       }
 
       await runQuery(
@@ -65,7 +69,7 @@ export async function listFriends(req, res) {
 
   try {
     const amigos = await allQuery(
-      `SELECT u.id, u.name, u.email FROM users u JOIN friendships f ON ((f.sender_id = ? AND f.receiver_id = u.id) OR (f.receiver_id = ? AND f.sender_id = u.id)) WHERE f.status = 'aceito'`,
+      `SELECT u.id, u.first_name || ' ' || u.last_name AS name, u.email FROM users u JOIN friendships f ON ((f.sender_id = ? AND f.receiver_id = u.id) OR (f.receiver_id = ? AND f.sender_id = u.id)) WHERE f.status = 'aceito'`,
       [userId, userId]
     );
 
@@ -80,7 +84,7 @@ export async function listFriendRequests(req, res) {
 
   try {
     const pedidos = await allQuery(
-      `SELECT f.sender_id AS id, u.name, u.email FROM friendships f JOIN users u ON f.sender_id = u.id WHERE f.receiver_id = ? AND f.status = 'pendente'`,
+      `SELECT f.sender_id AS id, u.first_name || ' ' || u.last_name AS name, u.email FROM friendships f JOIN users u ON f.sender_id = u.id WHERE f.receiver_id = ? AND f.status = 'pendente'`,
       [userId]
     );
 
@@ -105,7 +109,7 @@ export async function listUsersWithStatus(req, res) {
 
   try {
     const users = await allQuery(
-      `SELECT u.id, u.name, u.email, CASE WHEN f1.status = 'aceito' THEN 'amigos' WHEN f1.status = 'pendente' AND f1.sender_id = ? THEN 'pendente' WHEN f1.status = 'pendente' AND f1.receiver_id = ? THEN 'recebido' ELSE 'nenhum' END AS status FROM users u LEFT JOIN friendships f1 ON ((f1.sender_id = u.id AND f1.receiver_id = ?) OR (f1.sender_id = ? AND f1.receiver_id = u.id)) WHERE u.id != ?`,
+      `SELECT u.id, u.first_name || ' ' || u.last_name AS name, u.email, CASE WHEN f1.status = 'aceito' THEN 'amigos' WHEN f1.status = 'pendente' AND f1.sender_id = ? THEN 'pendente' WHEN f1.status = 'pendente' AND f1.receiver_id = ? THEN 'recebido' ELSE 'nenhum' END AS status FROM users u LEFT JOIN friendships f1 ON ((f1.sender_id = u.id AND f1.receiver_id = ?) OR (f1.sender_id = ? AND f1.receiver_id = u.id)) WHERE u.id != ?`,
       [userId, userId, userId, userId, userId]
     );
 
@@ -127,7 +131,9 @@ export async function rejectFriend(req, res) {
     );
 
     if (!pedido.length) {
-      return res.status(404).json({ error: "Pedido de amizade não encontrado." });
+      return res
+        .status(404)
+        .json({ error: "Pedido de amizade não encontrado." });
     }
 
     await runQuery(
@@ -184,7 +190,9 @@ export async function cancelRequest(req, res) {
     );
 
     if (!pedido.length) {
-      return res.status(404).json({ error: "Pedido de amizade não encontrado." });
+      return res
+        .status(404)
+        .json({ error: "Pedido de amizade não encontrado." });
     }
 
     await runQuery(

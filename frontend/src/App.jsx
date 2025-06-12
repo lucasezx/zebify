@@ -9,6 +9,7 @@ import Welcome from "./pages/welcome";
 import PrivateRoute from "./components/privateRoute";
 import UsersPage from "./pages/usersPage";
 import NewPostPage from "./pages/newPostPage";
+import Verificar from "./pages/verificar";
 
 function App() {
   return (
@@ -52,6 +53,8 @@ function App() {
             </PrivateRoute>
           }
         />
+
+        <Route path="/verify" element={<Verificar />} />
       </Routes>
     </div>
   );
