@@ -1,35 +1,38 @@
 import { runQuery, allQuery } from "../sql.js";
 
-export async function requestFriend(req, res) {
-  const senderId = req.user.id;
-  const { receiverId } = req.body;
+export function requestFriend(io) {
+  return async function (req, res) {
+    const senderId = req.user.id;
+    const { receiverId } = req.body;
 
-  if (!receiverId || senderId === receiverId) {
-    return res.status(400).json({ error: "Pedido inválido." });
-  }
-
-  try {
-    const existentes = await allQuery(
-      `SELECT * FROM friendships WHERE (sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?)`,
-      [senderId, receiverId, receiverId, senderId]
-    );
-
-    if (existentes.length > 0) {
-      return res
-        .status(409)
-        .json({ error: "Já existe pedido ou amizade entre os utilizadores." });
+    if (!receiverId || senderId === receiverId) {
+      return res.status(400).json({ error: "Pedido inválido." });
     }
 
-    await runQuery(
-      `INSERT INTO friendships (sender_id, receiver_id, status) VALUES (?, ?, 'pendente')`,
-      [senderId, receiverId]
-    );
+    try {
+      const existentes = await allQuery(
+        `SELECT * FROM friendships WHERE (sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?)`,
+        [senderId, receiverId, receiverId, senderId]
+      );
 
-    res.status(201).json({ message: "Pedido de amizade enviado!" });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Erro ao enviar pedido de amizade." });
-  }
+      if (existentes.length > 0) {
+        return res.status(409).json({
+          error: "Já existe pedido ou amizade entre os utilizadores.",
+        });
+      }
+
+      await runQuery(
+        `INSERT INTO friendships (sender_id, receiver_id, status) VALUES (?, ?, 'pendente')`,
+        [senderId, receiverId]
+      );
+
+      io.emit("pedido_enviado", { senderId, receiverId }); // ✅ AQUI
+      res.status(201).json({ message: "Pedido de amizade enviado!" });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: "Erro ao enviar pedido de amizade." });
+    }
+  };
 }
 
 export function acceptFriend(io) {
@@ -120,38 +123,39 @@ export async function listUsersWithStatus(req, res) {
   }
 }
 
-export async function rejectFriend(req, res) {
-  const receiverId = req.user.id;
-  const { senderId } = req.body;
+export function rejectFriend(io) {
+  return async function (req, res) {
+    const receiverId = req.user.id;
+    const senderId = Number(req.body.senderId);
 
-  try {
-    const pedido = await allQuery(
-      `SELECT * FROM friendships WHERE sender_id = ? AND receiver_id = ? AND status = 'pendente'`,
-      [senderId, receiverId]
-    );
+    try {
+      const pedido = await allQuery(
+        `SELECT * FROM friendships WHERE sender_id = ? AND receiver_id = ? AND status = 'pendente'`,
+        [senderId, receiverId]
+      );
 
-    if (!pedido.length) {
-      return res
-        .status(404)
-        .json({ error: "Pedido de amizade não encontrado." });
+      if (!pedido.length) {
+        return res.status(404).json({ error: "Pedido não encontrado." });
+      }
+
+      await runQuery(
+        `DELETE FROM friendships WHERE sender_id = ? AND receiver_id = ? AND status = 'pendente'`,
+        [senderId, receiverId]
+      );
+
+      io.emit("pedido_cancelado", { senderId, receiverId }); // 🔔 aqui!
+      res.json({ message: "Pedido recusado com sucesso." });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: "Erro ao recusar pedido." });
     }
-
-    await runQuery(
-      `DELETE FROM friendships WHERE sender_id = ? AND receiver_id = ? AND status = 'pendente'`,
-      [senderId, receiverId]
-    );
-
-    res.json({ message: "Pedido de amizade recusado." });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Erro ao recusar pedido de amizade." });
-  }
+  };
 }
 
 export function removeFriend(io) {
   return async function (req, res) {
     const userId = req.user.id;
-    const otherId = req.params.id;
+    const otherId = Number(req.params.id);
 
     try {
       const amizade = await allQuery(
@@ -179,30 +183,33 @@ export function removeFriend(io) {
   };
 }
 
-export async function cancelRequest(req, res) {
-  const senderId = req.user.id;
-  const receiverId = req.params.id;
+export function cancelRequest(io) {
+  return async function (req, res) {
+    const senderId = req.user.id;
+    const receiverId = Number(req.params.id);
 
-  try {
-    const pedido = await allQuery(
-      `SELECT * FROM friendships WHERE sender_id = ? AND receiver_id = ? AND status = 'pendente'`,
-      [senderId, receiverId]
-    );
+    try {
+      const pedido = await allQuery(
+        `SELECT * FROM friendships WHERE sender_id = ? AND receiver_id = ? AND status = 'pendente'`,
+        [senderId, receiverId]
+      );
 
-    if (!pedido.length) {
-      return res
-        .status(404)
-        .json({ error: "Pedido de amizade não encontrado." });
+      if (!pedido.length) {
+        return res
+          .status(404)
+          .json({ error: "Pedido de amizade não encontrado." });
+      }
+
+      await runQuery(
+        `DELETE FROM friendships WHERE sender_id = ? AND receiver_id = ? AND status = 'pendente'`,
+        [senderId, receiverId]
+      );
+
+      io.emit("pedido_cancelado", { senderId, receiverId });
+      res.json({ message: "Pedido de amizade cancelado com sucesso." });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: "Erro ao cancelar pedido de amizade." });
     }
-
-    await runQuery(
-      `DELETE FROM friendships WHERE sender_id = ? AND receiver_id = ? AND status = 'pendente'`,
-      [senderId, receiverId]
-    );
-
-    res.json({ message: "Pedido de amizade cancelado com sucesso." });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Erro ao cancelar pedido de amizade." });
-  }
+  };
 }

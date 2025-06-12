@@ -10,7 +10,7 @@ export default function CommentBox({ postId }) {
   const [menuAbertoId, setMenuAbertoId] = useState(null);
   const token = localStorage.getItem("token");
   const user = JSON.parse(localStorage.getItem("user"));
-  const menuRef = useRef();
+  const menuRefs = useRef({});
 
   const carregarComentarios = useCallback(async () => {
     try {
@@ -59,6 +59,10 @@ export default function CommentBox({ postId }) {
 
   const enviarComentario = async () => {
     if (!novoComentario.trim()) return;
+    if (novoComentario.length > 100) {
+      alert("O comentário deve ter no máximo 100 caracteres.");
+      return;
+    }
     try {
       const res = await fetch(`${API}/api/comments`, {
         method: "POST",
@@ -90,6 +94,10 @@ export default function CommentBox({ postId }) {
   };
 
   const salvarEdicao = async (id, conteudo) => {
+    if (conteudo.length > 100) {
+      alert("O comentário deve ter no máximo 100 caracteres.");
+      return;
+    }
     try {
       const res = await fetch(`${API}/api/comments/${id}`, {
         method: "PUT",
@@ -112,31 +120,43 @@ export default function CommentBox({ postId }) {
 
   useEffect(() => {
     const clickOutside = (e) => {
-      if (menuRef.current && !menuRef.current.contains(e.target)) {
+      if (
+        menuAbertoId &&
+        menuRefs.current[menuAbertoId] &&
+        !menuRefs.current[menuAbertoId].contains(e.target)
+      ) {
         setMenuAbertoId(null);
       }
     };
     document.addEventListener("mousedown", clickOutside);
     return () => document.removeEventListener("mousedown", clickOutside);
-  }, []);
+  }, [menuAbertoId]);
 
   return (
     <div className="mt-4 space-y-4">
       {comentarios.length > 0 && (
         <div className="space-y-3 text-sm text-gray-800">
           {comentarios.map((c) => (
-            <div key={c.id} className="relative border-l-2 border-gray-300 pl-3">
+            <div
+              key={c.id}
+              className="relative border-l-2 border-gray-300 pl-3"
+            >
               <strong>{c.autor}:</strong>{" "}
               {editando?.id === c.id ? (
                 <div className="mt-1 space-y-1">
                   <input
                     type="text"
                     value={editando.conteudo}
-                    onChange={(e) =>
-                      setEditando({ ...editando, conteudo: e.target.value })
-                    }
+                    onChange={(e) => {
+                      if (e.target.value.length <= 100) {
+                        setEditando({ ...editando, conteudo: e.target.value });
+                      }
+                    }}
                     className="w-full border border-gray-300 rounded px-2 py-1 text-sm"
                   />
+                  <div className="text-xs text-gray-500 text-right">
+                    {editando.conteudo.length}/100 caracteres
+                  </div>
                   <div className="flex gap-2 mt-1">
                     <button
                       onClick={() => salvarEdicao(c.id, editando.conteudo)}
@@ -154,22 +174,26 @@ export default function CommentBox({ postId }) {
                 </div>
               ) : (
                 <>
-                  <span>{c.conteudo}</span>
+                  <span className="break-words whitespace-pre-wrap">
+                    {c.conteudo}
+                  </span>
                   {user?.id === c.user_id && (
-                    <div className="inline-block ml-2 relative">
+                    <div
+                      className="inline-block ml-2 relative"
+                      ref={(el) => (menuRefs.current[c.id] = el)}
+                    >
                       <span
                         className="cursor-pointer font-bold px-2"
                         onClick={() =>
-                          setMenuAbertoId(menuAbertoId === c.id ? null : c.id)
+                          setMenuAbertoId((prevId) =>
+                            prevId === c.id ? null : c.id
+                          )
                         }
                       >
                         ⋯
                       </span>
                       {menuAbertoId === c.id && (
-                        <div
-                          ref={menuRef}
-                          className="absolute z-10 left-6 top-5 bg-white border border-gray-300 rounded shadow-sm text-sm"
-                        >
+                        <div className="absolute z-10 left-6 top-5 bg-white border border-gray-300 rounded shadow-sm text-sm">
                           <div
                             onClick={() => {
                               setEditando({ id: c.id, conteudo: c.conteudo });
@@ -201,21 +225,30 @@ export default function CommentBox({ postId }) {
           e.preventDefault();
           enviarComentario();
         }}
-        className="flex items-center gap-2"
+        className="flex flex-col gap-1"
       >
-        <input
-          type="text"
-          value={novoComentario}
-          onChange={(e) => setNovoComentario(e.target.value)}
-          placeholder="Escreva um comentário..."
-          className="flex-1 border border-gray-300 rounded px-3 py-2 text-sm shadow-sm focus:outline-none focus:border-emerald-500"
-        />
-        <button
-          type="submit"
-          className="bg-emerald-500 hover:bg-emerald-600 text-white text-sm px-4 py-2 rounded"
-        >
-          Comentar
-        </button>
+        <div className="flex items-center gap-2">
+          <input
+            type="text"
+            value={novoComentario}
+            onChange={(e) => {
+              if (e.target.value.length <= 100) {
+                setNovoComentario(e.target.value);
+              }
+            }}
+            placeholder="Escreva um comentário..."
+            className="flex-1 border border-gray-300 rounded px-3 py-2 text-sm shadow-sm focus:outline-none focus:border-emerald-500"
+          />
+          <button
+            type="submit"
+            className="bg-emerald-500 hover:bg-emerald-600 text-white text-sm px-4 py-2 rounded"
+          >
+            Comentar
+          </button>
+        </div>
+        <div className="text-xs text-gray-500 text-right">
+          {novoComentario.length}/100 caracteres
+        </div>
       </form>
     </div>
   );

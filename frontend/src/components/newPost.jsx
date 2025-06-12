@@ -71,100 +71,55 @@ const NewPost = ({ onPostSuccess }) => {
   };
 
   return (
-    <div style={{ marginBottom: "30px" }}>
-      <h3>Nova Publicação</h3>
+    <div className="w-full max-w-4xl bg-white p-6 rounded-2xl shadow-lg">
+      <h3 className="text-xl font-semibold mb-4">Nova Publicação</h3>
 
       <VisibilityToggle visibility={visibility} setVisibility={setVisibility} />
 
-      <div style={{ position: "relative", marginTop: "10px" }}>
-        <textarea
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          placeholder="O que está pensando?"
-          rows={4}
-          style={{
-            width: "100%",
-            padding: "15px 50px 15px 15px",
-            fontSize: "16px",
-            borderRadius: "12px",
-            border: "1px solid #ccc",
-            resize: "vertical",
-            boxSizing: "border-box",
-          }}
-        />
+      <textarea
+        value={content}
+        onChange={(e) => setContent(e.target.value)}
+        placeholder="O que está pensando?"
+        rows={5}
+        className="w-full mt-4 p-3 text-base border border-gray-300 rounded-xl resize-y focus:outline-none focus:ring-2 focus:ring-green-500"
+      />
 
+      <div className="mt-4 flex flex-col sm:flex-row items-center gap-4">
         <label
           htmlFor="imageUpload"
-          title="Adicionar imagem"
-          style={{
-            position: "absolute",
-            right: "15px",
-            bottom: "15px",
-            fontSize: "22px",
-            cursor: "pointer",
-            opacity: 0.6,
-            transition: "all 0.2s ease",
-          }}
-          onMouseOver={(e) => (e.currentTarget.style.opacity = 1)}
-          onMouseOut={(e) => (e.currentTarget.style.opacity = 0.6)}
+          className="flex items-center justify-center px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded-xl cursor-pointer transition"
         >
-          📷
+          Adicionar Imagem
         </label>
         <input
           type="file"
           id="imageUpload"
           accept="image/*"
           onChange={(e) => setImage(e.target.files[0])}
-          style={{ display: "none" }}
+          className="hidden"
         />
+
+        <button
+          onClick={handleSubmit}
+          className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl transition"
+        >
+          Publicar
+        </button>
       </div>
 
       {image && (
-        <div
-          style={{
-            position: "relative",
-            marginTop: "10px",
-            marginBottom: "15px",
-            display: "inline-block",
-            maxWidth: "100%",
-          }}
-        >
+        <div className="relative mt-4">
           <img
             src={URL.createObjectURL(image)}
             alt="Preview"
-            style={{
-              display: "block",
-              maxWidth: "100%",
-              maxHeight: "300px",
-              borderRadius: "8px",
-              border: "1px solid #ccc",
-            }}
+            className="max-w-full max-h-80 rounded-lg border border-gray-300"
           />
-
           <button
             onClick={() => {
               setImage(null);
               document.getElementById("imageUpload").value = "";
             }}
-            style={{
-              position: "absolute",
-              top: "6px",
-              right: "6px",
-              zIndex: 10,
-              backgroundColor: "#f44336",
-              color: "#fff",
-              border: "none",
-              borderRadius: "50%",
-              width: "20px",
-              height: "20px",
-              fontSize: "14px",
-              fontWeight: "bold",
-              lineHeight: "18px",
-              textAlign: "center",
-              cursor: "pointer",
-              padding: 0,
-              boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
-            }}
+            className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 text-sm font-bold flex items-center justify-center shadow"
             title="Remover imagem"
           >
             ×
@@ -172,23 +127,7 @@ const NewPost = ({ onPostSuccess }) => {
         </div>
       )}
 
-      <button
-        onClick={handleSubmit}
-        style={{
-          marginTop: "10px",
-          padding: "10px 20px",
-          backgroundColor: "#007bff",
-          color: "white",
-          border: "none",
-          borderRadius: "8px",
-          cursor: "pointer",
-          display: "block",
-        }}
-      >
-        Publicar
-      </button>
-
-      {mensagem && <p style={{ color: "green" }}>{mensagem}</p>}
+      {mensagem && <p className="mt-2 text-green-600">{mensagem}</p>}
     </div>
   );
 };

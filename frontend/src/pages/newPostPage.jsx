@@ -1,4 +1,3 @@
-// src/pages/NewPostPage.js
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import NewPost from "../components/newPost";
@@ -8,12 +7,8 @@ const NewPostPage = () => {
   const navigate = useNavigate();
 
   return (
-    <div style={{ padding: "20px", fontFamily: "sans-serif" }}>
-      <h1>Criar nova publicação</h1>
-
-      {/* Reaproveita o componente que você já tem */}
+    <div className="flex justify-center items-start min-h-screen bg-gray-100 pt-10">
       <NewPost onPostSuccess={() => navigate("/")} />
-
       <Footer />
     </div>
   );

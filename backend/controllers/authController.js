@@ -74,7 +74,7 @@ export async function signup(req, res) {
         gender,
         birthDate,
         verificationCode,
-        0, // is_verified = false
+        0,
       ]
     );
 
@@ -138,6 +138,8 @@ export async function login(req, res) {
         firstName: user.first_name,
         lastName: user.last_name,
         contact: user.email || user.phone,
+        birth_date: user.birth_date,
+        name: `${user.first_name} ${user.last_name}`,
       },
     });
   } catch (err) {
