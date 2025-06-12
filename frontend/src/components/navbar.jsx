@@ -42,7 +42,7 @@ const Navbar = () => {
   useEffect(() => {
     if (!user) return;
     buscarPedidos();
-    const t = setInterval(buscarPedidos, 10_000);
+    const t = setInterval(buscarPedidos, 10000);
     return () => clearInterval(t);
   }, [user, buscarPedidos]);
 
@@ -75,7 +75,7 @@ const Navbar = () => {
   const isAuthPage = ["/login", "/signup"].includes(location.pathname);
 
   return (
-    <nav className="bg-white shadow-md px-4 py-3 flex justify-between items-center">
+    <nav className="fixed top-0 left-0 w-full z-50 bg-white shadow-md px-4 py-3 flex justify-between items-center">
       <img
         src={logoTexto}
         alt="Zebify"
@@ -96,7 +96,7 @@ const Navbar = () => {
                 title="Utilizadores / Pedidos"
               />
               <Item Icon={FaUser} to="/profile" title="Perfil" />
-              <span className="text-sm text-gray-700">
+              <span className="text-sm text-gray-700 whitespace-nowrap">
                 Olá, {user.firstName} {user.lastName}
               </span>
 

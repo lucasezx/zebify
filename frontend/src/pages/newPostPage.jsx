@@ -7,8 +7,10 @@ const NewPostPage = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="flex justify-center items-start min-h-screen bg-gray-100 pt-10">
-      <NewPost onPostSuccess={() => navigate("/")} />
+    <div className="min-h-screen flex flex-col bg-gray-100">
+      <main className="flex-1 flex justify-center items-start pt-20 px-4">
+        <NewPost onPostSuccess={() => navigate("/")} />
+      </main>
       <Footer />
     </div>
   );

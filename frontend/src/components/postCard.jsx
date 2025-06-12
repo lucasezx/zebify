@@ -55,8 +55,15 @@ export default function PostCard({
 
   const salvar = async () => {
     try {
+      const conteudoOriginal = post.conteudo ?? "";
+      const conteudoNovo = conteudo ?? "";
+
+      const foiEditado = conteudoOriginal.trim() !== conteudoNovo.trim();
+
       await updatePost(post.id, { conteudo, legenda });
       setEditing(false);
+      setMsg("");
+
       onChange?.();
     } catch (e) {
       setMsg(e.message);
@@ -76,7 +83,11 @@ export default function PostCard({
 
   const atualizarVisibilidade = async (vis) => {
     try {
-      await updatePost(post.id, { visibility: vis });
+      await updatePost(post.id, {
+        conteudo: post.conteudo,
+        legenda: post.legenda,
+        visibility: vis,
+      });
       setVisMenuOpen(false);
       setMenuOpen(false);
       onChange?.();
@@ -99,8 +110,11 @@ export default function PostCard({
               </span>
             )}
           </div>
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-gray-500 flex items-center gap-2">
             {formatarData(post.created_at)}
+            {post.editado === 1 && (
+              <span className="text-gray-400 italic">(editado)</span>
+            )}
           </p>
         </div>
 
@@ -205,11 +219,13 @@ export default function PostCard({
               className="rounded-lg w-full max-w-md mx-auto"
             />
           )}
+
           {post.conteudo && (
             <p className="text-gray-800 text-base whitespace-pre-wrap break-words leading-relaxed">
               {textoCurto
                 ? `${post.conteudo.slice(0, LIMITE)}...`
                 : post.conteudo}
+
               {post.conteudo.length > LIMITE && (
                 <button
                   className="ml-2 text-emerald-600 text-sm"
@@ -220,6 +236,7 @@ export default function PostCard({
               )}
             </p>
           )}
+
           {post.legenda && (
             <p className="text-sm text-gray-500 italic">{post.legenda}</p>
           )}

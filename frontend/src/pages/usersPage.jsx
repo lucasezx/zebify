@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useAuth } from "../context/authContext";
 import socket from "../socket";
+import Footer from "../components/footer";
 
 const API = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
 
@@ -86,102 +87,109 @@ const UsersPage = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-6">Utilizadores</h1>
+    <div className="min-h-screen flex flex-col bg-gray-100">
+      <main className="flex-1 pt-20 px-6 max-w-4xl w-full mx-auto">
+        <h1 className="text-2xl font-bold mb-6">Utilizadores</h1>
 
-      {utilizadores
-        .filter((u) => u.id !== user?.id)
-        .map((u) => (
-          <div
-            key={u.id}
-            className="bg-white shadow-sm border border-gray-200 rounded-xl p-4 mb-4"
-          >
-            <p className="text-base mb-2">
-              <strong className="text-green-700">{u.name}</strong> -{" "}
-              <span className="text-gray-600">{u.email}</span>
-              <span
-                className={`ml-3 px-3 py-1 rounded-full text-xs font-semibold text-white capitalize ${
-                  u.status === "amigos"
-                    ? "bg-green-600"
-                    : u.status === "pendente"
-                    ? "bg-yellow-500"
-                    : u.status === "recebido"
-                    ? "bg-blue-500"
-                    : "bg-gray-400"
-                }`}
-              >
-                {u.status}
-              </span>
-            </p>
-
-            <div className="flex flex-wrap gap-3 mt-2">
-              {u.status === "amigos" && (
-                <button
-                  onClick={() =>
-                    executarAcao(`${API}/api/friends/${u.id}`, "DELETE")
-                  }
-                  disabled={loadingId === u.id}
-                  className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition"
+        {utilizadores
+          .filter((u) => u.id !== user?.id)
+          .map((u) => (
+            <div
+              key={u.id}
+              className="bg-white shadow-sm border border-gray-200 rounded-xl p-4 mb-4"
+            >
+              <p className="text-base mb-2">
+                <strong className="text-green-700">{u.name}</strong> -{" "}
+                <span className="text-gray-600">{u.email}</span>
+                <span
+                  className={`ml-3 px-3 py-1 rounded-full text-xs font-semibold text-white capitalize ${
+                    u.status === "amigos"
+                      ? "bg-green-600"
+                      : u.status === "pendente"
+                      ? "bg-yellow-500"
+                      : u.status === "recebido"
+                      ? "bg-blue-500"
+                      : "bg-gray-400"
+                  }`}
                 >
-                  Remover amigo
-                </button>
-              )}
+                  {u.status}
+                </span>
+              </p>
 
-              {u.status === "pendente" && (
-                <button
-                  onClick={() =>
-                    executarAcao(`${API}/api/friends/request/${u.id}`, "DELETE")
-                  }
-                  disabled={loadingId === u.id}
-                  className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg text-sm transition"
-                >
-                  Cancelar pedido
-                </button>
-              )}
-
-              {u.status === "recebido" && (
-                <>
+              <div className="flex flex-wrap gap-3 mt-2">
+                {u.status === "amigos" && (
                   <button
                     onClick={() =>
-                      executarAcao(`${API}/api/friends/accept`, "POST", {
-                        senderId: u.id,
-                      })
-                    }
-                    disabled={loadingId === u.id}
-                    className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition"
-                  >
-                    Aceitar
-                  </button>
-                  <button
-                    onClick={() =>
-                      executarAcao(`${API}/api/friends/reject`, "POST", {
-                        senderId: u.id,
-                      })
+                      executarAcao(`${API}/api/friends/${u.id}`, "DELETE")
                     }
                     disabled={loadingId === u.id}
                     className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition"
                   >
-                    Recusar
+                    Remover amigo
                   </button>
-                </>
-              )}
+                )}
 
-              {u.status === "nenhum" && (
-                <button
-                  onClick={() =>
-                    executarAcao(`${API}/api/friends/request`, "POST", {
-                      receiverId: u.id,
-                    })
-                  }
-                  disabled={loadingId === u.id}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition"
-                >
-                  Adicionar amigo
-                </button>
-              )}
+                {u.status === "pendente" && (
+                  <button
+                    onClick={() =>
+                      executarAcao(
+                        `${API}/api/friends/request/${u.id}`,
+                        "DELETE"
+                      )
+                    }
+                    disabled={loadingId === u.id}
+                    className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg text-sm transition"
+                  >
+                    Cancelar pedido
+                  </button>
+                )}
+
+                {u.status === "recebido" && (
+                  <>
+                    <button
+                      onClick={() =>
+                        executarAcao(`${API}/api/friends/accept`, "POST", {
+                          senderId: u.id,
+                        })
+                      }
+                      disabled={loadingId === u.id}
+                      className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition"
+                    >
+                      Aceitar
+                    </button>
+                    <button
+                      onClick={() =>
+                        executarAcao(`${API}/api/friends/reject`, "POST", {
+                          senderId: u.id,
+                        })
+                      }
+                      disabled={loadingId === u.id}
+                      className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition"
+                    >
+                      Recusar
+                    </button>
+                  </>
+                )}
+
+                {u.status === "nenhum" && (
+                  <button
+                    onClick={() =>
+                      executarAcao(`${API}/api/friends/request`, "POST", {
+                        receiverId: u.id,
+                      })
+                    }
+                    disabled={loadingId === u.id}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition"
+                  >
+                    Adicionar amigo
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+      </main>
+
+      <Footer />
     </div>
   );
 };

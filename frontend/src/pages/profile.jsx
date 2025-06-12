@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useAuth } from "../context/authContext";
 import { Navigate } from "react-router-dom";
-import "../css/profile.css";
 import Footer from "../components/footer";
 import PostCard from "../components/postCard";
 
@@ -120,171 +119,159 @@ const Profile = () => {
 
   if (!user) return <Navigate to="/login" />;
 
-  return (
-    <>
-      <div className="profile-container">
-        <h1 className="text-3xl font-bold mb-6">Meu Perfil</h1>
+return (
+  <div className="min-h-screen flex flex-col bg-gray-100">
+    <main className="flex-1 pt-20 px-4 max-w-4xl w-full mx-auto">
+      <h1 className="text-3xl font-bold mb-6">Meu Perfil</h1>
 
-        {/* Caixa com os dados do perfil */}
-        <div className="bg-white border border-gray-300 rounded-lg p-6 shadow-sm mb-6">
-          <h2 className="text-xl font-bold text-gray-700 mb-4">
-            Informações do Perfil
-          </h2>
+      {/* Caixa com os dados do perfil */}
+      <div className="bg-white border border-gray-300 rounded-lg p-6 shadow-sm mb-6">
+        <h2 className="text-xl font-bold text-gray-700 mb-4">
+          Informações do Perfil
+        </h2>
 
-          <div className="space-y-2 text-lg text-gray-800 font-semibold">
-            <p>
-              <strong>Nome:</strong>{" "}
-              {editando ? (
-                <input
-                  type="text"
-                  value={nome}
-                  onChange={(e) => setNome(e.target.value)}
-                  className="border px-2 py-1 rounded font-normal text-base"
-                />
-              ) : (
-                nome
-              )}
-            </p>
-            <p>
-              <strong>Apelido:</strong>{" "}
-              {editando ? (
-                <input
-                  type="text"
-                  value={apelido}
-                  onChange={(e) => setApelido(e.target.value)}
-                  className="border px-2 py-1 rounded font-normal text-base"
-                />
-              ) : (
-                apelido
-              )}
-            </p>
-            <p>
-              <strong>Email:</strong> {user.email || user.contact}
-            </p>
-            <p className="flex items-center gap-2 flex-wrap">
-              <strong>Idade:</strong>
-              {editando ? (
-                <>
-                  <select
-                    value={dia}
-                    onChange={(e) => setDia(e.target.value)}
-                    className="border px-2 py-2 rounded font-normal text-base w-full sm:w-auto appearance-none pr-8"
-                  >
-                    <option value="">Dia</option>
-                    {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
-                      <option key={d} value={d}>
-                        {d}
-                      </option>
-                    ))}
-                  </select>
-                  <select
-                    value={mes}
-                    onChange={(e) => setMes(e.target.value)}
-                    className="border px-2 py-2 rounded font-normal text-base w-full sm:w-auto appearance-none pr-8"
-                  >
-                    <option value="">Mês</option>
-                    {[
-                      "Jan",
-                      "Fev",
-                      "Mar",
-                      "Abr",
-                      "Mai",
-                      "Jun",
-                      "Jul",
-                      "Ago",
-                      "Set",
-                      "Out",
-                      "Nov",
-                      "Dez",
-                    ].map((nome, i) => (
-                      <option key={i + 1} value={i + 1}>
-                        {nome}
-                      </option>
-                    ))}
-                  </select>
-                  <select
-                    value={ano}
-                    onChange={(e) => setAno(e.target.value)}
-                    className="border px-2 py-2 rounded font-normal text-base w-full sm:w-auto appearance-none pr-8"
-                  >
-                    <option value="">Ano</option>
-                    {Array.from(
-                      { length: 120 },
-                      (_, i) => new Date().getFullYear() - i
-                    ).map((y) => (
-                      <option key={y} value={y}>
-                        {y}
-                      </option>
-                    ))}
-                  </select>
-                </>
-              ) : user.birth_date ? (
-                `${idade} anos`
-              ) : (
-                "Não informado"
-              )}
-            </p>
-          </div>
-
-          <div className="mt-6 flex gap-2">
+        <div className="space-y-2 text-lg text-gray-800 font-semibold">
+          <p>
+            <strong>Nome:</strong>{" "}
+            {editando ? (
+              <input
+                type="text"
+                value={nome}
+                onChange={(e) => setNome(e.target.value)}
+                className="border px-2 py-1 rounded font-normal text-base"
+              />
+            ) : (
+              nome
+            )}
+          </p>
+          <p>
+            <strong>Apelido:</strong>{" "}
+            {editando ? (
+              <input
+                type="text"
+                value={apelido}
+                onChange={(e) => setApelido(e.target.value)}
+                className="border px-2 py-1 rounded font-normal text-base"
+              />
+            ) : (
+              apelido
+            )}
+          </p>
+          <p>
+            <strong>Email:</strong> {user.email || user.contact}
+          </p>
+          <p className="flex items-center gap-2 flex-wrap">
+            <strong>Idade:</strong>
             {editando ? (
               <>
-                <button
-                  onClick={salvarAlteracoes}
-                  className="bg-green-600 text-white px-6 py-1 rounded hover:bg-green-700 font-bold text-lg"
+                <select
+                  value={dia}
+                  onChange={(e) => setDia(e.target.value)}
+                  className="border px-2 py-2 rounded font-normal text-base w-full sm:w-auto appearance-none pr-8"
                 >
-                  Salvar
-                </button>
-                <button
-                  onClick={() => setEditando(false)}
-                  className="bg-red-600 text-white px-6 py-1 rounded hover:bg-gray-400 font-bold text-lg"
+                  <option value="">Dia</option>
+                  {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
+                    <option key={d} value={d}>
+                      {d}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={mes}
+                  onChange={(e) => setMes(e.target.value)}
+                  className="border px-2 py-2 rounded font-normal text-base w-full sm:w-auto appearance-none pr-8"
                 >
-                  Cancelar
-                </button>
+                  <option value="">Mês</option>
+                  {[
+                    "Jan", "Fev", "Mar", "Abr", "Mai", "Jun",
+                    "Jul", "Ago", "Set", "Out", "Nov", "Dez",
+                  ].map((nome, i) => (
+                    <option key={i + 1} value={i + 1}>
+                      {nome}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={ano}
+                  onChange={(e) => setAno(e.target.value)}
+                  className="border px-2 py-2 rounded font-normal text-base w-full sm:w-auto appearance-none pr-8"
+                >
+                  <option value="">Ano</option>
+                  {Array.from({ length: 120 }, (_, i) => new Date().getFullYear() - i).map((y) => (
+                    <option key={y} value={y}>
+                      {y}
+                    </option>
+                  ))}
+                </select>
               </>
+            ) : user.birth_date ? (
+              `${idade} anos`
             ) : (
-              <button
-                onClick={() => setEditando(true)}
-                className="bg-blue-600 text-white px-4 py-1 rounded hover:bg-blue-700 font-bold text-lg"
-              >
-                ✏️ Editar Perfil
-              </button>
+              "Não informado"
             )}
-          </div>
+          </p>
+        </div>
 
-          {mensagem && (
-            <p className="mt-3 text-green-600 text-lg font-bold">{mensagem}</p>
+        <div className="mt-6 flex gap-2">
+          {editando ? (
+            <>
+              <button
+                onClick={salvarAlteracoes}
+                className="bg-green-600 text-white px-6 py-1 rounded hover:bg-green-700 font-bold text-lg"
+              >
+                Salvar
+              </button>
+              <button
+                onClick={() => setEditando(false)}
+                className="bg-red-600 text-white px-6 py-1 rounded hover:bg-gray-400 font-bold text-lg"
+              >
+                Cancelar
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={() => setEditando(true)}
+              className="bg-blue-600 text-white px-4 py-1 rounded hover:bg-blue-700 font-bold text-lg"
+            >
+              ✏️ Editar Perfil
+            </button>
           )}
         </div>
 
-        {/* Publicações */}
-        <h2 className="text-xl font-bold text-gray-700 mb-4">
-          Minhas Publicações
-        </h2>
-        {meusPosts.map((post) => (
-          <PostCard
-            key={post.id}
-            post={post}
-            isOwner={true}
-            showComments={false}
-            onChange={async () => {
-              try {
-                const res = await fetch(`${API}/api/my-posts`, {
-                  headers: { Authorization: `Bearer ${token}` },
-                });
-                if (!res.ok) throw new Error(await res.text());
-                const data = await res.json();
-                setMeusPosts(data);
-              } catch (err) {
-                console.error("Erro ao atualizar posts:", err.message);
-              }
-            }}
-          />
-        ))}
+        {mensagem && (
+          <p className="mt-3 text-green-600 text-lg font-bold">{mensagem}</p>
+        )}
       </div>
-      <Footer />
-    </>
-  );
+
+      {/* Publicações */}
+      <h2 className="text-xl font-bold text-gray-700 mb-4">
+        Minhas Publicações
+      </h2>
+      {meusPosts.map((post) => (
+        <PostCard
+          key={post.id}
+          post={post}
+          isOwner={true}
+          showComments={false}
+          onChange={async () => {
+            try {
+              const res = await fetch(`${API}/api/my-posts`, {
+                headers: { Authorization: `Bearer ${token}` },
+              });
+              if (!res.ok) throw new Error(await res.text());
+              const data = await res.json();
+              setMeusPosts(data);
+            } catch (err) {
+              console.error("Erro ao atualizar posts:", err.message);
+            }
+          }}
+        />
+      ))}
+    </main>
+    <Footer />
+  </div>
+);
+
 };
 
 export default Profile;

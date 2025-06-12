@@ -64,37 +64,39 @@ const Home = () => {
   }, []);
 
   return (
-    <main className="bg-gray-100 min-h-screen py-10">
-      <div className="max-w-3xl mx-auto px-4 space-y-8">
-        <header>
-          <h1 className="text-3xl font-bold text-emerald-700">
-            Bem-vindo ao Zebify
-          </h1>
-          <p className="text-sm text-gray-500">
-            Veja as últimas publicações dos seus amigos
-          </p>
-        </header>
+    <div className="min-h-screen flex flex-col bg-gray-100">
+      <main className="flex-1 pt-20">
+        <div className="max-w-3xl mx-auto px-4 space-y-8">
+          <header>
+            <h1 className="text-3xl font-bold text-emerald-700">
+              Bem-vindo ao Zebify
+            </h1>
+            <p className="text-sm text-gray-500">
+              Veja as últimas publicações dos seus amigos
+            </p>
+          </header>
 
-        {loading ? (
-          <div className="text-center py-10 text-gray-500 animate-pulse">
-            Carregando posts...
-          </div>
-        ) : erro ? (
-          <div className="text-center py-10 text-red-500">{erro}</div>
-        ) : posts.length === 0 ? (
-          <div className="text-center py-10 text-gray-500">
-            Nenhuma publicação ainda.
-          </div>
-        ) : (
-          <section className="space-y-6">
-            {posts.map((post) => (
-              <PostCard key={post.id} post={post} onChange={fetchPosts} />
-            ))}
-          </section>
-        )}
-      </div>
+          {loading ? (
+            <div className="text-center py-10 text-gray-500 animate-pulse">
+              Carregando posts...
+            </div>
+          ) : erro ? (
+            <div className="text-center py-10 text-red-500">{erro}</div>
+          ) : posts.length === 0 ? (
+            <div className="text-center py-10 text-gray-500">
+              Nenhuma publicação ainda.
+            </div>
+          ) : (
+            <section className="space-y-6">
+              {posts.map((post) => (
+                <PostCard key={post.id} post={post} onChange={fetchPosts} />
+              ))}
+            </section>
+          )}
+        </div>
+      </main>
       <Footer />
-    </main>
+    </div>
   );
 };
 
