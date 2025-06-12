@@ -69,8 +69,6 @@ export default function PostCard({ post, onChange, isOwner = false }) {
 
   return (
     <article className="bg-green-500 text-white text-3xl font-bold p-8 rounded-3xl shadow-2xl border-4 border-yellow-400">
-  ESTILOS TAILWIND FUNCIONAM?
-
       <header className="flex justify-between items-start">
         <div>
           <p className="text-xl font-bold text-gray-800">@{post.author}</p>
@@ -80,10 +78,6 @@ export default function PostCard({ post, onChange, isOwner = false }) {
             </span>
           )}
         </div>
-        <div className="debug-bg p-4">
-  Conteúdo de teste
-</div>
-
 
         {isOwner && post.user_id === user?.id && (
           <div className="relative" ref={menuRef}>

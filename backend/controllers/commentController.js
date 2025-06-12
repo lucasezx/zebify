@@ -10,20 +10,26 @@ export function addComment(io) {
     }
 
     try {
-      const userInfo = await allQuery(`SELECT name FROM users WHERE id = ?`, [
-        userId,
-      ]);
+      const userInfo = await allQuery(
+        `SELECT first_name, last_name FROM users WHERE id = ?`,
+        [userId]
+      );
+
       const result = await runQuery(
         `INSERT INTO comments (post_id, user_id, conteudo) VALUES (?, ?, ?)`,
         [postId, userId, conteudo]
       );
+
+      const fullName = userInfo.length
+        ? `${userInfo[0].first_name} ${userInfo[0].last_name}`
+        : "Usuário";
 
       const novoComentario = {
         id: result.lastID,
         postId,
         conteudo,
         user_id: userId,
-        user_name: userInfo[0]?.name || "Usuário",
+        user_name: fullName,
         created_at: new Date().toISOString(),
       };
 
@@ -67,7 +73,7 @@ export function updateComment(io) {
     ]);
 
     const [comentario] = await allQuery(
-      `SELECT c.*, u.name AS autor FROM comments c JOIN users u ON u.id = c.user_id WHERE c.id = ?`,
+      `SELECT c.*, u.first_name || ' ' || u.last_name AS autor FROM comments c JOIN users u ON u.id = c.user_id WHERE c.id = ?`,
       [commentId]
     );
 
