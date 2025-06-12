@@ -5,16 +5,25 @@ import socket from "../socket";
 
 const API = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
 
-export default function PostCard({ post, onChange, isOwner = false }) {
+export default function PostCard({
+  post,
+  onChange,
+  isOwner = false,
+  showComments = true,
+}) {
   const [editing, setEditing] = useState(false);
   const [conteudo, setConteudo] = useState(post.conteudo ?? "");
   const [legenda, setLegenda] = useState(post.legenda ?? "");
   const [menuOpen, setMenuOpen] = useState(false);
   const [visMenuOpen, setVisMenuOpen] = useState(false);
   const [msg, setMsg] = useState("");
+  const [verMais, setVerMais] = useState(false);
 
   const menuRef = useRef();
   const user = JSON.parse(localStorage.getItem("user"));
+
+  const LIMITE = 200;
+  const textoCurto = post.conteudo?.length > LIMITE && !verMais;
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -24,15 +33,24 @@ export default function PostCard({ post, onChange, isOwner = false }) {
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const visibilityIcons = {
     public: "🌍 Público",
     friends: "👥 Amigos",
     private: "🔒 Apenas eu",
+  };
+
+  const formatarData = (data) => {
+    const dt = new Date(data);
+    return dt.toLocaleString("pt-PT", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   };
 
   const salvar = async () => {
@@ -68,21 +86,28 @@ export default function PostCard({ post, onChange, isOwner = false }) {
   };
 
   return (
-    <article className="bg-green-500 text-white text-3xl font-bold p-8 rounded-3xl shadow-2xl border-4 border-yellow-400">
+    <article className="bg-white border border-green-500 rounded-md p-6 shadow-md mb-6">
       <header className="flex justify-between items-start">
-        <div>
-          <p className="text-xl font-bold text-gray-800">@{post.author}</p>
-          {post.visibility && (
-            <span className="text-sm text-blue-600">
-              {visibilityIcons[post.visibility]}
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-base font-semibold text-green-800">
+              @{post.author}
             </span>
-          )}
+            {post.visibility && (
+              <span className="text-sm text-blue-600 flex items-center gap-1">
+                {visibilityIcons[post.visibility]}
+              </span>
+            )}
+          </div>
+          <p className="text-xs text-gray-500">
+            {formatarData(post.created_at)}
+          </p>
         </div>
 
         {isOwner && post.user_id === user?.id && (
           <div className="relative" ref={menuRef}>
             <button
-              onClick={() => setMenuOpen(!menuOpen)}
+              onClick={() => setMenuOpen((prev) => !prev)}
               className="text-xl font-bold text-gray-600 hover:text-black"
             >
               ⋯
@@ -131,7 +156,7 @@ export default function PostCard({ post, onChange, isOwner = false }) {
       </header>
 
       {editing ? (
-        <div className="space-y-3">
+        <div className="space-y-3 mt-2">
           {post.tipo === "texto" && (
             <textarea
               value={conteudo}
@@ -172,7 +197,7 @@ export default function PostCard({ post, onChange, isOwner = false }) {
           {msg && <p className="text-red-500 text-sm mt-1">{msg}</p>}
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-2 mt-2">
           {post.tipo === "imagem" && post.imagem_path && (
             <img
               src={`${API}/uploads/${post.imagem_path}`}
@@ -181,8 +206,18 @@ export default function PostCard({ post, onChange, isOwner = false }) {
             />
           )}
           {post.conteudo && (
-            <p className="text-gray-800 text-base whitespace-pre-wrap leading-relaxed">
-              {post.conteudo}
+            <p className="text-gray-800 text-base whitespace-pre-wrap break-words leading-relaxed">
+              {textoCurto
+                ? `${post.conteudo.slice(0, LIMITE)}...`
+                : post.conteudo}
+              {post.conteudo.length > LIMITE && (
+                <button
+                  className="ml-2 text-emerald-600 text-sm"
+                  onClick={() => setVerMais(!verMais)}
+                >
+                  {verMais ? "ver menos" : "ver mais"}
+                </button>
+              )}
             </p>
           )}
           {post.legenda && (
@@ -191,12 +226,14 @@ export default function PostCard({ post, onChange, isOwner = false }) {
         </div>
       )}
 
-      <section className="pt-4 border-t">
-        <h3 className="text-sm font-semibold text-gray-700 mb-2">
-          Comentários
-        </h3>
-        <CommentBox postId={post.id} />
-      </section>
+      {showComments && (
+        <section className="pt-4 border-t mt-4">
+          <h3 className="text-sm font-semibold text-gray-700 mb-2">
+            Comentários
+          </h3>
+          <CommentBox postId={post.id} />
+        </section>
+      )}
     </article>
   );
 }

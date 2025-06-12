@@ -58,7 +58,6 @@ const UsersPage = () => {
       });
     }
 
-
     return () => {
       socket.off("pedido_enviado");
       socket.off("pedido_cancelado");
@@ -74,10 +73,10 @@ const UsersPage = () => {
       await fetch(url, {
         method,
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
+          ...(body && { "Content-Type": "application/json" }),
         },
-        body: body ? JSON.stringify(body) : null,
+        body: body ? JSON.stringify(body) : undefined,
       });
 
       carregarUtilizadores();
@@ -87,112 +86,100 @@ const UsersPage = () => {
   };
 
   return (
-    <div style={{ padding: "20px", fontFamily: "sans-serif" }}>
-      <h1>Utilizadores</h1>
+    <div className="max-w-4xl mx-auto p-6">
+      <h1 className="text-2xl font-bold mb-6">Utilizadores</h1>
 
       {utilizadores
         .filter((u) => u.id !== user?.id)
         .map((u) => (
           <div
             key={u.id}
-            className="card"
-            style={{
-              marginBottom: "10px",
-              padding: "10px",
-              border: "1px solid #ccc",
-              borderRadius: "6px",
-            }}
+            className="bg-white shadow-sm border border-gray-200 rounded-xl p-4 mb-4"
           >
-            <p>
-              <strong>{u.name}</strong> - {u.email}
+            <p className="text-base mb-2">
+              <strong className="text-green-700">{u.name}</strong> -{" "}
+              <span className="text-gray-600">{u.email}</span>
               <span
-                style={{
-                  backgroundColor:
-                    u.status === "amigos"
-                      ? "green"
-                      : u.status === "pendente"
-                      ? "orange"
-                      : u.status === "recebido"
-                      ? "blue"
-                      : "#999",
-                  color: "white",
-                  padding: "2px 8px",
-                  marginLeft: "10px",
-                  borderRadius: "12px",
-                  fontSize: "12px",
-                  textTransform: "capitalize",
-                }}
+                className={`ml-3 px-3 py-1 rounded-full text-xs font-semibold text-white capitalize ${
+                  u.status === "amigos"
+                    ? "bg-green-600"
+                    : u.status === "pendente"
+                    ? "bg-yellow-500"
+                    : u.status === "recebido"
+                    ? "bg-blue-500"
+                    : "bg-gray-400"
+                }`}
               >
                 {u.status}
               </span>
             </p>
 
-            {u.status === "amigos" && (
-              <button
-                onClick={() =>
-                  executarAcao(`${API}/api/friends/${u.id}`, "DELETE")
-                }
-                disabled={loadingId === u.id}
-                style={{ backgroundColor: "red", color: "white" }}
-              >
-                Remover amigo
-              </button>
-            )}
-
-            {u.status === "pendente" && (
-              <button
-                onClick={() =>
-                  executarAcao(`${API}/api/friends/request/${u.id}`, "DELETE")
-                }
-                disabled={loadingId === u.id}
-              >
-                Cancelar pedido
-              </button>
-            )}
-
-            {u.status === "recebido" && (
-              <>
+            <div className="flex flex-wrap gap-3 mt-2">
+              {u.status === "amigos" && (
                 <button
                   onClick={() =>
-                    executarAcao(`${API}/api/friends/accept`, "POST", {
-                      senderId: u.id,
+                    executarAcao(`${API}/api/friends/${u.id}`, "DELETE")
+                  }
+                  disabled={loadingId === u.id}
+                  className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition"
+                >
+                  Remover amigo
+                </button>
+              )}
+
+              {u.status === "pendente" && (
+                <button
+                  onClick={() =>
+                    executarAcao(`${API}/api/friends/request/${u.id}`, "DELETE")
+                  }
+                  disabled={loadingId === u.id}
+                  className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg text-sm transition"
+                >
+                  Cancelar pedido
+                </button>
+              )}
+
+              {u.status === "recebido" && (
+                <>
+                  <button
+                    onClick={() =>
+                      executarAcao(`${API}/api/friends/accept`, "POST", {
+                        senderId: u.id,
+                      })
+                    }
+                    disabled={loadingId === u.id}
+                    className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition"
+                  >
+                    Aceitar
+                  </button>
+                  <button
+                    onClick={() =>
+                      executarAcao(`${API}/api/friends/reject`, "POST", {
+                        senderId: u.id,
+                      })
+                    }
+                    disabled={loadingId === u.id}
+                    className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition"
+                  >
+                    Recusar
+                  </button>
+                </>
+              )}
+
+              {u.status === "nenhum" && (
+                <button
+                  onClick={() =>
+                    executarAcao(`${API}/api/friends/request`, "POST", {
+                      receiverId: u.id,
                     })
                   }
                   disabled={loadingId === u.id}
-                  style={{
-                    backgroundColor: "green",
-                    color: "white",
-                    marginRight: "8px",
-                  }}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition"
                 >
-                  Aceitar
+                  Adicionar amigo
                 </button>
-                <button
-                  onClick={() =>
-                    executarAcao(`${API}/api/friends/reject`, "POST", {
-                      senderId: u.id,
-                    })
-                  }
-                  disabled={loadingId === u.id}
-                  style={{ backgroundColor: "red", color: "white" }}
-                >
-                  Recusar
-                </button>
-              </>
-            )}
-
-            {u.status === "nenhum" && (
-              <button
-                onClick={() =>
-                  executarAcao(`${API}/api/friends/request`, "POST", {
-                    receiverId: u.id,
-                  })
-                }
-                disabled={loadingId === u.id}
-              >
-                Adicionar amigo
-              </button>
-            )}
+              )}
+            </div>
           </div>
         ))}
     </div>

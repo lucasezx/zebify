@@ -15,7 +15,7 @@ export async function createPost(req, res) {
     return res.status(400).json({ error: "Dados da publicação incompletos" });
   }
 
-  if (!["public", "friends"].includes(visibility)) {
+  if (!["public", "friends", "private"].includes(visibility)) {
     return res.status(400).json({ error: "Visibilidade inválida." });
   }
 
@@ -64,9 +64,14 @@ export async function getMyPosts(req, res) {
   const userId = req.user.id;
   try {
     const posts = await allQuery(
-      `SELECT * FROM posts WHERE user_id = ? ORDER BY created_at DESC`,
+      `SELECT p.*, u.first_name || ' ' || u.last_name AS author
+   FROM posts p
+   JOIN users u ON u.id = p.user_id
+   WHERE p.user_id = ?
+   ORDER BY p.created_at DESC`,
       [userId]
     );
+
     res.json(posts);
   } catch (err) {
     res.status(500).json({ error: "Erro ao buscar suas publicações." });
@@ -97,16 +102,16 @@ export function updatePost(io) {
 
     const [postAtualizado] = await allQuery(
       `SELECT p.id,
-              p.conteudo,
-              p.legenda,
-              p.tipo,
-              p.imagem_path,
-              p.visibility,
-              p.created_at,
-              u.name AS author
-       FROM posts p
-       JOIN users u ON u.id = p.user_id
-      WHERE p.id = ?`,
+          p.conteudo,
+          p.legenda,
+          p.tipo,
+          p.imagem_path,
+          p.visibility,
+          p.created_at,
+          u.first_name || ' ' || u.last_name AS author
+   FROM posts p
+   JOIN users u ON u.id = p.user_id
+   WHERE p.id = ?`,
       [postId]
     );
 

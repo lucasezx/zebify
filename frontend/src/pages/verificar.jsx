@@ -36,7 +36,7 @@ const Verificar = () => {
           Verificar Conta
         </h2>
         <p className="text-sm text-gray-600 text-center">
-          Insere o email ou número usado no cadastro e o código recebido.
+          Insere o email ou número usado no registo e o código recebido.
         </p>
 
         <input

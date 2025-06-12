@@ -46,7 +46,12 @@ export async function getComments(req, res) {
   const { postId } = req.params;
   try {
     const comentarios = await allQuery(
-      `SELECT c.*, u.name AS autor FROM comments c JOIN users u ON c.user_id = u.id WHERE c.post_id = ? ORDER BY c.created_at ASC`,
+      `SELECT c.*, u.first_name || ' ' || u.last_name AS autor
+      FROM comments c
+      JOIN users u ON c.user_id = u.id
+      WHERE c.post_id = ?
+      ORDER BY c.created_at ASC`,
+
       [postId]
     );
     res.json(comentarios);

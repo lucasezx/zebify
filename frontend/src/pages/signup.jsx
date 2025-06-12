@@ -100,7 +100,7 @@ export default function Signup() {
       if (res.ok) {
         navigate("/verify", { state: { contact: form.contact } });
       } else {
-        setMensagem(data.error || "Erro ao cadastrar");
+        setMensagem(data.error || "Erro ao registar");
       }
     } catch (err) {
       console.error(err);

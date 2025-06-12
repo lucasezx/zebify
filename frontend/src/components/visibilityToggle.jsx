@@ -1,19 +1,19 @@
 import React from "react";
 
 const VisibilityToggle = ({ visibility, setVisibility }) => {
+  const baseStyle =
+    "px-4 py-2 rounded-lg font-medium border transition duration-150";
+
   return (
-    <div style={{ margin: "10px 0", display: "flex", gap: "10px" }}>
+    <div className="my-3 flex gap-3">
       <button
         type="button"
         onClick={() => setVisibility("public")}
-        style={{
-          padding: "8px 16px",
-          borderRadius: "8px",
-          border: "1px solid #ccc",
-          backgroundColor: visibility === "public" ? "#007bff" : "#f0f0f0",
-          color: visibility === "public" ? "white" : "black",
-          cursor: "pointer",
-        }}
+        className={`${baseStyle} ${
+          visibility === "public"
+            ? "bg-blue-600 text-white border-blue-600"
+            : "bg-gray-100 text-gray-800 border-gray-300 hover:bg-gray-200"
+        }`}
       >
         🌍 Público
       </button>
@@ -21,16 +21,25 @@ const VisibilityToggle = ({ visibility, setVisibility }) => {
       <button
         type="button"
         onClick={() => setVisibility("friends")}
-        style={{
-          padding: "8px 16px",
-          borderRadius: "8px",
-          border: "1px solid #ccc",
-          backgroundColor: visibility === "friends" ? "#28a745" : "#f0f0f0",
-          color: visibility === "friends" ? "white" : "black",
-          cursor: "pointer",
-        }}
+        className={`${baseStyle} ${
+          visibility === "friends"
+            ? "bg-green-600 text-white border-green-600"
+            : "bg-gray-100 text-gray-800 border-gray-300 hover:bg-gray-200"
+        }`}
       >
         🤝 Apenas amigos
+      </button>
+
+      <button
+        type="button"
+        onClick={() => setVisibility("private")}
+        className={`${baseStyle} ${
+          visibility === "private"
+            ? "bg-gray-700 text-white border-gray-700"
+            : "bg-gray-100 text-gray-800 border-gray-300 hover:bg-gray-200"
+        }`}
+      >
+        🔒 Apenas eu
       </button>
     </div>
   );
