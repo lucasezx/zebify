@@ -45,78 +45,80 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
-      <div className="flex flex-col md:flex-row items-center justify-between w-full max-w-6xl">
-        <div className="mb-10 md:mb-0 md:w-1/2 flex items-center gap-6">
-          <img src={logo} alt="Zebify" className="w-32 h-auto" />
-          <p className="text-xl text-gray-700">
-            O Zebify ajuda-te a partilhar ideias com o mundo.
-          </p>
-        </div>
+    <div className="min-h-screen flex flex-col bg-gray-100">
+      <main className="flex flex-1 items-center justify-center px-4">
+        <div className="flex flex-col md:flex-row items-center justify-between w-full max-w-6xl">
+          <div className="mb-10 md:mb-0 md:w-1/2 flex items-center gap-6">
+            <img src={logo} alt="Zebify" className="w-32 h-auto" />
+            <p className="text-xl text-gray-700">
+              O Zebify ajuda-te a partilhar ideias com o mundo.
+            </p>
+          </div>
 
-        <div className="bg-white p-10 rounded-2xl shadow-2xl border border-gray-300 w-full md:w-1/3 ring-1 ring-green-200">
-          <form onSubmit={(e) => e.preventDefault()} className="space-y-4">
-            <input
-              type="text"
-              placeholder="Email ou número de telemóvel"
-              value={contact}
-              onChange={(e) => setContact(e.target.value)}
-              required
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-400 focus:outline-none"
-            />
-
-            <div className="relative">
+          <div className="bg-white p-10 rounded-2xl shadow-2xl border border-gray-300 w-full md:w-1/3 ring-1 ring-green-200">
+            <form onSubmit={(e) => e.preventDefault()} className="space-y-4">
               <input
-                type={showPassword ? "text" : "password"}
-                placeholder="Senha"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                type="text"
+                placeholder="Email ou número de telemóvel"
+                value={contact}
+                onChange={(e) => setContact(e.target.value)}
                 required
-                className="w-full px-4 py-2 border border-gray-300 rounded-md pr-10 focus:ring-2 focus:ring-green-400 focus:outline-none"
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-400 focus:outline-none"
               />
+
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Senha"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md pr-10 focus:ring-2 focus:ring-green-400 focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 text-sm text-gray-500"
+                >
+                  {showPassword ? "Ocultar" : "Mostrar"}
+                </button>
+              </div>
+
               <button
-                type="button"
-                onClick={() => setShowPassword((prev) => !prev)}
-                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-sm text-gray-500"
+                onClick={handleLogin}
+                className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-md transition"
               >
-                {showPassword ? "Ocultar" : "Mostrar"}
+                Iniciar Sessão
               </button>
-            </div>
 
-            <button
-              onClick={handleLogin}
-              className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-md transition"
-            >
-              Iniciar Sessão
-            </button>
+              <a
+                href="/signup"
+                className="block text-center text-green-600 hover:underline font-medium"
+              >
+                Criar nova conta
+              </a>
 
-            <a
-              href="/signup"
-              className="block text-center text-green-600 hover:underline font-medium"
-            >
-              Criar nova conta
-            </a>
-
-            {mensagem && (
-              <>
-                <p className="text-center text-red-600 font-medium">
-                  {mensagem}
-                </p>
-                {mensagem.includes("não verificada") && (
-                  <p className="text-center mt-2 text-sm text-gray-600">
-                    <Link
-                      to="/verify"
-                      className="text-green-600 hover:underline"
-                    >
-                      Verificar agora
-                    </Link>
+              {mensagem && (
+                <>
+                  <p className="text-center text-red-600 font-medium">
+                    {mensagem}
                   </p>
-                )}
-              </>
-            )}
-          </form>
+                  {mensagem.includes("não verificada") && (
+                    <p className="text-center mt-2 text-sm text-gray-600">
+                      <Link
+                        to="/verify"
+                        className="text-green-600 hover:underline"
+                      >
+                        Verificar agora
+                      </Link>
+                    </p>
+                  )}
+                </>
+              )}
+            </form>
+          </div>
         </div>
-      </div>
+      </main>
 
       <Footer />
     </div>

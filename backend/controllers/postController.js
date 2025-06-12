@@ -21,7 +21,7 @@ export async function createPost(req, res) {
 
   try {
     await runQuery(
-      `INSERT INTO posts (user_id, tipo, conteudo, legenda, imagem_path, visibility) VALUES (?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO posts (user_id, tipo, conteudo, legenda, imagem_path, visibility, editado) VALUES (?, ?, ?, ?, ?, ?, 0)`,
       [
         user_id,
         tipo,
@@ -85,33 +85,59 @@ export function updatePost(io) {
     const { conteudo, legenda, visibility } = req.body;
 
     const [post] = await allQuery(
-      "SELECT * FROM posts WHERE id=? AND user_id=?",
+      "SELECT * FROM posts WHERE id = ? AND user_id = ?",
       [postId, userId]
     );
     if (!post) return res.status(403).json({ error: "Sem permissão" });
 
+    // impedir texto vazio
+    if (post.tipo === "texto" && (!conteudo || conteudo.trim() === "")) {
+      return res
+        .status(400)
+        .json({ error: "A publicação de texto não pode estar vazia." });
+    }
+
+    // valores novos (ou atuais)
+    const conteudoNovo     = conteudo  ?? post.conteudo;
+    const legendaNova      = legenda   ?? post.legenda;
+    const visibilidadeNova = visibility ?? post.visibility;
+
+    // 1) nada foi realmente alterado? — encerra cedo
+    const nadaMudou =
+      conteudoNovo     === post.conteudo &&
+      legendaNova      === post.legenda &&
+      visibilidadeNova === post.visibility;
+
+    if (nadaMudou) {
+      return res.status(200).json({ message: "Nada foi alterado." });
+    }
+
+    // 2) houve edição de texto/legenda?
+    const foiEditado =
+      ( (conteudoNovo ?? "").trim() !== (post.conteudo ?? "").trim() ) ||
+      ( (legendaNova  ?? "").trim() !== (post.legenda  ?? "").trim() );
+
     await runQuery(
-      "UPDATE posts SET conteudo=?, legenda=?, visibility=? WHERE id=?",
+      `UPDATE posts
+         SET conteudo   = ?,
+             legenda    = ?,
+             visibility = ?,
+             editado    = ?
+       WHERE id = ?`,
       [
-        conteudo ?? post.conteudo,
-        legenda ?? post.legenda,
-        visibility ?? post.visibility,
+        conteudoNovo,
+        legendaNova,
+        visibilidadeNova,
+        foiEditado ? 1 : post.editado, // só marca se alterou texto/legenda
         postId,
       ]
     );
 
     const [postAtualizado] = await allQuery(
-      `SELECT p.id,
-          p.conteudo,
-          p.legenda,
-          p.tipo,
-          p.imagem_path,
-          p.visibility,
-          p.created_at,
-          u.first_name || ' ' || u.last_name AS author
-   FROM posts p
-   JOIN users u ON u.id = p.user_id
-   WHERE p.id = ?`,
+      `SELECT p.*, u.first_name || ' ' || u.last_name AS author
+         FROM posts p
+         JOIN users u ON u.id = p.user_id
+        WHERE p.id = ?`,
       [postId]
     );
 
@@ -119,6 +145,7 @@ export function updatePost(io) {
     res.json(postAtualizado);
   };
 }
+
 
 export function deletePost(io) {
   return async function (req, res) {

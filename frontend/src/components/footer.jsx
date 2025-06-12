@@ -1,9 +1,8 @@
 import React from "react";
-import "../css/footer.css";
 
 const Footer = () => {
   return (
-    <footer className="footer">
+    <footer className="py-4 text-sm text-gray-500 text-center">
       <p>
         Zebify &copy; {new Date().getFullYear()} - Todos os direitos
         reservados.
