@@ -24,7 +24,7 @@ export function addComment(io) {
         ? `${userInfo[0].first_name} ${userInfo[0].last_name}`
         : "Usuário";
 
-      const novoComentario = {
+      const newComment = {
         id: result.lastID,
         postId,
         conteudo,
@@ -33,7 +33,7 @@ export function addComment(io) {
         created_at: new Date().toISOString(),
       };
 
-      io.emit("newComment", novoComentario);
+      io.emit("newComment", newComment);
       res.status(201).json({ message: "Comentário adicionado!" });
     } catch (err) {
       console.error("Erro ao comentar:", err);
@@ -45,7 +45,7 @@ export function addComment(io) {
 export async function getComments(req, res) {
   const { postId } = req.params;
   try {
-    const comentarios = await allQuery(
+    const comments = await allQuery(
       `SELECT c.*, u.first_name || ' ' || u.last_name AS autor
       FROM comments c
       JOIN users u ON c.user_id = u.id
@@ -54,7 +54,7 @@ export async function getComments(req, res) {
 
       [postId]
     );
-    res.json(comentarios);
+    res.json(comments);
   } catch (err) {
     res.status(500).json({ error: "Erro ao buscar comentários." });
   }
@@ -77,13 +77,13 @@ export function updateComment(io) {
       commentId,
     ]);
 
-    const [comentario] = await allQuery(
+    const [comment] = await allQuery(
       `SELECT c.*, u.first_name || ' ' || u.last_name AS autor FROM comments c JOIN users u ON u.id = c.user_id WHERE c.id = ?`,
       [commentId]
     );
 
-    io.emit("comentario_editado", comentario);
-    res.json(comentario);
+    io.emit("comentario_editado", comment);
+    res.json(comment);
   };
 }
 

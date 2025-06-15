@@ -4,21 +4,21 @@ import socket from "../socket";
 const API = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
 
 export default function CommentBox({ postId }) {
-  const [comentarios, setComentarios] = useState([]);
-  const [novoComentario, setNovoComentario] = useState("");
-  const [editando, setEditando] = useState(null);
-  const [menuAbertoId, setMenuAbertoId] = useState(null);
+  const [comments, setComments] = useState([]);
+  const [newComment, setNewComment] = useState("");
+  const [editing, setEditing] = useState(null);
+  const [openedMenuId, setOpenedMenuId] = useState(null);
   const token = localStorage.getItem("token");
   const user = JSON.parse(localStorage.getItem("user"));
   const menuRefs = useRef({});
 
-  const carregarComentarios = useCallback(async () => {
+  const loadComments = useCallback(async () => {
     try {
       const res = await fetch(`${API}/api/comments/${postId}`);
       if (!res.ok) throw new Error("Erro ao buscar comentários");
       const data = await res.json();
       if (Array.isArray(data)) {
-        setComentarios(data);
+        setComments(data);
       }
     } catch (err) {
       console.error("Erro ao carregar comentários:", err.message);
@@ -26,40 +26,40 @@ export default function CommentBox({ postId }) {
   }, [postId]);
 
   useEffect(() => {
-    if (postId) carregarComentarios();
+    if (postId) loadComments();
 
-    const novo = (data) => {
+    const newC = (data) => {
       if (data.postId === postId) {
-        setComentarios((prev) => [...prev, { ...data, autor: data.user_name }]);
+        setComments((prev) => [...prev, { ...data, autor: data.user_name }]);
       }
     };
 
-    const editado = (comentario) => {
-      if (comentario.post_id === postId) {
-        setComentarios((prev) =>
-          prev.map((c) => (c.id === comentario.id ? comentario : c))
+    const edited = (comment) => {
+      if (comment.post_id === postId) {
+        setComments((prev) =>
+          prev.map((c) => (c.id === comment.id ? comment : c))
         );
       }
     };
 
-    const deletado = (id) => {
-      setComentarios((prev) => prev.filter((c) => c.id !== id));
+    const deleted = (id) => {
+      setComments((prev) => prev.filter((c) => c.id !== id));
     };
 
-    socket.on("newComment", novo);
-    socket.on("comentario_editado", editado);
-    socket.on("comentario_deletado", deletado);
+    socket.on("newComment", newC);
+    socket.on("comentario_editado", edited);
+    socket.on("comentario_deletado", deleted);
 
     return () => {
-      socket.off("newComment", novo);
-      socket.off("comentario_editado", editado);
-      socket.off("comentario_deletado", deletado);
+      socket.off("newComment", newC);
+      socket.off("comentario_editado", edited);
+      socket.off("comentario_deletado", deleted);
     };
-  }, [postId, carregarComentarios]);
+  }, [postId, loadComments]);
 
-  const enviarComentario = async () => {
-    if (!novoComentario.trim()) return;
-    if (novoComentario.length > 100) {
+  const sendComment = async () => {
+    if (!newComment.trim()) return;
+    if (newComment.length > 100) {
       alert("O comentário deve ter no máximo 100 caracteres.");
       return;
     }
@@ -70,30 +70,30 @@ export default function CommentBox({ postId }) {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ postId, conteudo: novoComentario }),
+        body: JSON.stringify({ postId, conteudo: newComment }),
       });
       if (!res.ok) throw new Error(await res.text());
-      setNovoComentario("");
-      await carregarComentarios();
+      setNewComment("");
+      await loadComments();
     } catch (err) {
       alert("Erro ao comentar: " + err.message);
     }
   };
 
-  const apagarComentario = async (id) => {
+  const deleteComment = async (id) => {
     try {
       const res = await fetch(`${API}/api/comments/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error(await res.text());
-      setMenuAbertoId(null);
+      setOpenedMenuId(null);
     } catch (err) {
       alert("Erro ao apagar: " + err.message);
     }
   };
 
-  const salvarEdicao = async (id, conteudo) => {
+  const saveEdit = async (id, conteudo) => {
     if (conteudo.length > 100) {
       alert("O comentário deve ter no máximo 100 caracteres.");
       return;
@@ -108,11 +108,11 @@ export default function CommentBox({ postId }) {
         body: JSON.stringify({ conteudo }),
       });
       if (!res.ok) throw new Error(await res.text());
-      const atualizado = await res.json();
-      setComentarios((prev) =>
-        prev.map((c) => (c.id === atualizado.id ? atualizado : c))
+      const updated = await res.json();
+      setComments((prev) =>
+        prev.map((c) => (c.id === updated.id ? updated : c))
       );
-      setEditando(null);
+      setEditing(null);
     } catch (err) {
       alert("Erro ao editar: " + err.message);
     }
@@ -121,51 +121,51 @@ export default function CommentBox({ postId }) {
   useEffect(() => {
     const clickOutside = (e) => {
       if (
-        menuAbertoId &&
-        menuRefs.current[menuAbertoId] &&
-        !menuRefs.current[menuAbertoId].contains(e.target)
+        openedMenuId &&
+        menuRefs.current[openedMenuId] &&
+        !menuRefs.current[openedMenuId].contains(e.target)
       ) {
-        setMenuAbertoId(null);
+        setOpenedMenuId(null);
       }
     };
     document.addEventListener("mousedown", clickOutside);
     return () => document.removeEventListener("mousedown", clickOutside);
-  }, [menuAbertoId]);
+  }, [openedMenuId]);
 
   return (
     <div className="mt-4 space-y-4">
-      {comentarios.length > 0 && (
+      {comments.length > 0 && (
         <div className="space-y-3 text-sm text-gray-800">
-          {comentarios.map((c) => (
+          {comments.map((c) => (
             <div
               key={c.id}
               className="relative border-l-2 border-gray-300 pl-3"
             >
               <strong>{c.autor}:</strong>{" "}
-              {editando?.id === c.id ? (
+              {editing?.id === c.id ? (
                 <div className="mt-1 space-y-1">
                   <input
                     type="text"
-                    value={editando.conteudo}
+                    value={editing.conteudo}
                     onChange={(e) => {
                       if (e.target.value.length <= 100) {
-                        setEditando({ ...editando, conteudo: e.target.value });
+                        setEditing({ ...editing, conteudo: e.target.value });
                       }
                     }}
                     className="w-full border border-gray-300 rounded px-2 py-1 text-sm"
                   />
                   <div className="text-xs text-gray-500 text-right">
-                    {editando.conteudo.length}/100 caracteres
+                    {editing.conteudo.length}/100 caracteres
                   </div>
                   <div className="flex gap-2 mt-1">
                     <button
-                      onClick={() => salvarEdicao(c.id, editando.conteudo)}
+                      onClick={() => saveEdit(c.id, editing.conteudo)}
                       className="px-3 py-1 bg-emerald-500 text-white text-sm rounded hover:bg-emerald-600"
                     >
                       Salvar
                     </button>
                     <button
-                      onClick={() => setEditando(null)}
+                      onClick={() => setEditing(null)}
                       className="px-3 py-1 bg-gray-300 text-gray-800 text-sm rounded hover:bg-gray-400"
                     >
                       Cancelar
@@ -185,26 +185,26 @@ export default function CommentBox({ postId }) {
                       <span
                         className="cursor-pointer font-bold px-2"
                         onClick={() =>
-                          setMenuAbertoId((prevId) =>
+                          setOpenedMenuId((prevId) =>
                             prevId === c.id ? null : c.id
                           )
                         }
                       >
                         ⋯
                       </span>
-                      {menuAbertoId === c.id && (
+                      {openedMenuId === c.id && (
                         <div className="absolute z-10 left-6 top-5 bg-white border border-gray-300 rounded shadow-sm text-sm">
                           <div
                             onClick={() => {
-                              setEditando({ id: c.id, conteudo: c.conteudo });
-                              setMenuAbertoId(null);
+                              setEditing({ id: c.id, conteudo: c.conteudo });
+                              setOpenedMenuId(null);
                             }}
                             className="cursor-pointer px-3 py-1 hover:bg-gray-100"
                           >
                             Editar
                           </div>
                           <div
-                            onClick={() => apagarComentario(c.id)}
+                            onClick={() => deleteComment(c.id)}
                             className="cursor-pointer px-3 py-1 text-red-600 hover:bg-red-100"
                           >
                             Apagar
@@ -223,17 +223,17 @@ export default function CommentBox({ postId }) {
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          enviarComentario();
+          sendComment();
         }}
         className="flex flex-col gap-1"
       >
         <div className="flex items-center gap-2">
           <input
             type="text"
-            value={novoComentario}
+            value={newComment}
             onChange={(e) => {
               if (e.target.value.length <= 100) {
-                setNovoComentario(e.target.value);
+                setNewComment(e.target.value);
               }
             }}
             placeholder="Escreva um comentário..."
@@ -247,7 +247,7 @@ export default function CommentBox({ postId }) {
           </button>
         </div>
         <div className="text-xs text-gray-500 text-right">
-          {novoComentario.length}/100 caracteres
+          {newComment.length}/100 caracteres
         </div>
       </form>
     </div>

@@ -10,12 +10,12 @@ export function requestFriend(io) {
     }
 
     try {
-      const existentes = await allQuery(
+      const existing = await allQuery(
         `SELECT * FROM friendships WHERE (sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?)`,
         [senderId, receiverId, receiverId, senderId]
       );
 
-      if (existentes.length > 0) {
+      if (existing.length > 0) {
         return res.status(409).json({
           error: "Já existe pedido ou amizade entre os utilizadores.",
         });
@@ -26,7 +26,7 @@ export function requestFriend(io) {
         [senderId, receiverId]
       );
 
-      io.emit("pedido_enviado", { senderId, receiverId }); // ✅ AQUI
+      io.emit("pedido_enviado", { senderId, receiverId });
       res.status(201).json({ message: "Pedido de amizade enviado!" });
     } catch (err) {
       console.error(err);
@@ -41,12 +41,12 @@ export function acceptFriend(io) {
     const { senderId } = req.body;
 
     try {
-      const pedido = await allQuery(
+      const request = await allQuery(
         `SELECT * FROM friendships WHERE sender_id = ? AND receiver_id = ? AND status = 'pendente'`,
         [senderId, receiverId]
       );
 
-      if (pedido.length === 0) {
+      if (request.length === 0) {
         return res
           .status(404)
           .json({ error: "Pedido de amizade não encontrado." });
@@ -86,12 +86,12 @@ export async function listFriendRequests(req, res) {
   const userId = req.user.id;
 
   try {
-    const pedidos = await allQuery(
+    const requests = await allQuery(
       `SELECT f.sender_id AS id, u.first_name || ' ' || u.last_name AS name, u.email FROM friendships f JOIN users u ON f.sender_id = u.id WHERE f.receiver_id = ? AND f.status = 'pendente'`,
       [userId]
     );
 
-    res.json(pedidos);
+    res.json(requests);
   } catch (err) {
     res.status(500).json({ error: "Erro ao buscar pedidos de amizade." });
   }
@@ -129,12 +129,12 @@ export function rejectFriend(io) {
     const senderId = Number(req.body.senderId);
 
     try {
-      const pedido = await allQuery(
+      const request = await allQuery(
         `SELECT * FROM friendships WHERE sender_id = ? AND receiver_id = ? AND status = 'pendente'`,
         [senderId, receiverId]
       );
 
-      if (!pedido.length) {
+      if (!request.length) {
         return res.status(404).json({ error: "Pedido não encontrado." });
       }
 
@@ -143,7 +143,7 @@ export function rejectFriend(io) {
         [senderId, receiverId]
       );
 
-      io.emit("pedido_cancelado", { senderId, receiverId }); // 🔔 aqui!
+      io.emit("pedido_cancelado", { senderId, receiverId });
       res.json({ message: "Pedido recusado com sucesso." });
     } catch (err) {
       console.error(err);
@@ -158,12 +158,12 @@ export function removeFriend(io) {
     const otherId = Number(req.params.id);
 
     try {
-      const amizade = await allQuery(
+      const friendship = await allQuery(
         `SELECT * FROM friendships WHERE status = 'aceito' AND ((sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?))`,
         [userId, otherId, otherId, userId]
       );
 
-      if (!amizade.length) {
+      if (!friendship.length) {
         return res.status(404).json({ error: "Amizade não encontrada." });
       }
 
@@ -189,12 +189,12 @@ export function cancelRequest(io) {
     const receiverId = Number(req.params.id);
 
     try {
-      const pedido = await allQuery(
+      const request = await allQuery(
         `SELECT * FROM friendships WHERE sender_id = ? AND receiver_id = ? AND status = 'pendente'`,
         [senderId, receiverId]
       );
 
-      if (!pedido.length) {
+      if (!request.length) {
         return res
           .status(404)
           .json({ error: "Pedido de amizade não encontrado." });
