@@ -1,4 +1,5 @@
 import { runQuery } from "../sql.js";
+import { getDaysInMonth } from "../utils/date.js";
 
 export async function updateProfile(req, res) {
   const userId = req.user?.id;
@@ -6,6 +7,20 @@ export async function updateProfile(req, res) {
 
   if (!userId || !firstName || !lastName || !birthDate) {
     return res.status(400).json({ error: "Dados inválidos." });
+  }
+
+  const [anoStr, mesStr, diaStr] = birthDate.split("-");
+  const ano = parseInt(anoStr);
+  const mes = parseInt(mesStr);
+  const dia = parseInt(diaStr);
+
+  if (isNaN(ano) || isNaN(mes) || isNaN(dia)) {
+    return res.status(400).json({ error: "Data de nascimento inválida." });
+  }
+
+  const maxDia = getDaysInMonth(ano, mes);
+  if (dia < 1 || dia > maxDia) {
+    return res.status(400).json({ error: "Data de nascimento inválida." });
   }
 
   try {
@@ -19,3 +34,4 @@ export async function updateProfile(req, res) {
     res.status(500).json({ error: "Erro ao atualizar perfil." });
   }
 }
+

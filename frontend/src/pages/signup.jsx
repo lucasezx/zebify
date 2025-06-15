@@ -1,11 +1,14 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Footer from "../components/footer";
+import { getDaysInMonth } from "../../../backend/utils/date";
 
 export default function Signup() {
   const navigate = useNavigate();
   const currentYear = new Date().getFullYear();
-  const days = Array.from({ length: 31 }, (_, i) => i + 1);
+  const [days, setDays] = useState(() =>
+    Array.from({ length: getDaysInMonth(currentYear, 1) }, (_, i) => i + 1)
+  );
   const months = [
     { value: "1", label: "Jan" },
     { value: "2", label: "Fev" },
@@ -36,6 +39,14 @@ export default function Signup() {
   const [showPassword, setShowPassword] = useState(false);
   const [erros, setErros] = useState({});
   const [mensagem, setMensagem] = useState("");
+
+  useEffect(() => {
+    const count = getDaysInMonth(form.year || currentYear, form.month || 1);
+    setDays(Array.from({ length: count }, (_, i) => i + 1));
+    if (form.day && parseInt(form.day, 10) > count) {
+      setForm((prev) => ({ ...prev, day: String(count) }));
+    }
+  }, [form.month, form.year]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -72,7 +83,19 @@ export default function Signup() {
 
     if (!form.day || !form.month || !form.year) {
       novoErros.birthDate = "Informe a data de nascimento";
-    }
+    } else {
+      const d = Number(form.day);
+      const m = Number(form.month);
+      const y = Number(form.year);
+      const testDate = new Date(y, m - 1, d);
+      if (
+        Number.isNaN(testDate.getTime()) ||
+        testDate.getFullYear() !== y ||
+        testDate.getMonth() !== m - 1 ||
+        testDate.getDate() !== d
+      ) {
+        novoErros.birthDate = "Data de nascimento inválida";
+      }
 
     if (!form.gender) {
       novoErros.gender = "Selecione o gênero.";
@@ -313,4 +336,5 @@ export default function Signup() {
       <Footer />
     </div>
   );
+}
 }
