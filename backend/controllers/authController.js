@@ -2,6 +2,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { runQuery, allQuery } from "../sql.js";
 import { sendVerificationEmail } from "../utils/email.js";
+import { getDaysInMonth } from "../utils/date.js";
 
 const JWT_SECRET = process.env.JWT_SECRET || "zebify_super_secreto";
 
@@ -18,6 +19,10 @@ export async function signup(req, res) {
     !birthDate
   ) {
     return res.status(400).json({ error: "Todos os campos são obrigatórios" });
+  }
+
+  if (!getDaysInMonth(birthDate)) {
+    return res.status(400).json({ error: "Data de nascimento inválida." });
   }
 
   if (password.length < 6) {
