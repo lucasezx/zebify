@@ -65,10 +65,10 @@ export async function getMyPosts(req, res) {
   try {
     const posts = await allQuery(
       `SELECT p.*, u.first_name || ' ' || u.last_name AS author
-   FROM posts p
-   JOIN users u ON u.id = p.user_id
-   WHERE p.user_id = ?
-   ORDER BY p.created_at DESC`,
+      FROM posts p
+      JOIN users u ON u.id = p.user_id
+      WHERE p.user_id = ?
+      ORDER BY p.created_at DESC`,
       [userId]
     );
 
@@ -90,32 +90,28 @@ export function updatePost(io) {
     );
     if (!post) return res.status(403).json({ error: "Sem permissão" });
 
-    // impedir texto vazio
     if (post.tipo === "texto" && (!conteudo || conteudo.trim() === "")) {
       return res
         .status(400)
         .json({ error: "A publicação de texto não pode estar vazia." });
     }
 
-    // valores novos (ou atuais)
-    const conteudoNovo     = conteudo  ?? post.conteudo;
-    const legendaNova      = legenda   ?? post.legenda;
+    const conteudoNovo = conteudo ?? post.conteudo;
+    const legendaNova = legenda ?? post.legenda;
     const visibilidadeNova = visibility ?? post.visibility;
 
-    // 1) nada foi realmente alterado? — encerra cedo
     const nadaMudou =
-      conteudoNovo     === post.conteudo &&
-      legendaNova      === post.legenda &&
+      conteudoNovo === post.conteudo &&
+      legendaNova === post.legenda &&
       visibilidadeNova === post.visibility;
 
     if (nadaMudou) {
       return res.status(200).json({ message: "Nada foi alterado." });
     }
 
-    // 2) houve edição de texto/legenda?
     const foiEditado =
-      ( (conteudoNovo ?? "").trim() !== (post.conteudo ?? "").trim() ) ||
-      ( (legendaNova  ?? "").trim() !== (post.legenda  ?? "").trim() );
+      (conteudoNovo ?? "").trim() !== (post.conteudo ?? "").trim() ||
+      (legendaNova ?? "").trim() !== (post.legenda ?? "").trim();
 
     await runQuery(
       `UPDATE posts
@@ -128,7 +124,7 @@ export function updatePost(io) {
         conteudoNovo,
         legendaNova,
         visibilidadeNova,
-        foiEditado ? 1 : post.editado, // só marca se alterou texto/legenda
+        foiEditado ? 1 : post.editado,
         postId,
       ]
     );
@@ -145,7 +141,6 @@ export function updatePost(io) {
     res.json(postAtualizado);
   };
 }
-
 
 export function deletePost(io) {
   return async function (req, res) {

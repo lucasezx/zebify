@@ -22,7 +22,7 @@ export async function signup(req, res) {
 
   if (password.length < 6) {
     return res.status(400).json({
-      error: "A senha deve ter pelo menos 6 caracteres.",
+      error: "A palavra-passe deve ter, no mínimo, 6 caracteres.",
     });
   }
 
@@ -57,7 +57,6 @@ export async function signup(req, res) {
       100000 + Math.random() * 900000
     ).toString();
 
-    // Envia e-mail de verificação (se for e-mail)
     if (email) {
       await sendVerificationEmail(email, verificationCode);
     }
@@ -79,11 +78,11 @@ export async function signup(req, res) {
     );
 
     res.status(201).json({
-      message: "Utilizador cadastrado com sucesso! Verifique sua conta.",
+      message: "Utilizador registado com sucesso! Verifique sua conta.",
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Erro ao cadastrar utilizador" });
+    res.status(500).json({ error: "Erro ao registar utilizador" });
   }
 }
 
@@ -93,7 +92,7 @@ export async function login(req, res) {
   if (!contact || !password) {
     return res
       .status(400)
-      .json({ error: "Contacto e senha são obrigatórios!" });
+      .json({ error: "Contacto e palavra-passe são obrigatórios!" });
   }
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -115,9 +114,9 @@ export async function login(req, res) {
       });
     }
 
-    const senhaOk = await bcrypt.compare(password, user.password);
-    if (!senhaOk) {
-      return res.status(401).json({ error: "Senha incorreta" });
+    const passOk = await bcrypt.compare(password, user.password);
+    if (!passOk) {
+      return res.status(401).json({ error: "Palavra-passe incorreta" });
     }
 
     const token = jwt.sign(
