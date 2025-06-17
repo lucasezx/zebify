@@ -96,6 +96,7 @@ export default function Signup() {
       ) {
         novoErros.birthDate = "Data de nascimento inválida";
       }
+    }
 
     if (!form.gender) {
       novoErros.gender = "Selecione o gênero.";
@@ -127,6 +128,7 @@ export default function Signup() {
       if (res.ok) {
         navigate("/verify", { state: { contact: form.contact } });
       } else {
+        console.error("Erro do backend:", data);
         setMensagem(data.error || "Erro ao registar");
       }
     } catch (err) {
@@ -336,5 +338,4 @@ export default function Signup() {
       <Footer />
     </div>
   );
-}
 }
