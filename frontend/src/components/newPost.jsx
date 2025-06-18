@@ -73,7 +73,6 @@ const NewPost = ({ onPostSuccess }) => {
   return (
     <div className="w-full max-w-4xl bg-white p-6 rounded-2xl shadow-lg">
       <h3 className="text-xl font-semibold mb-4">Nova Publicação</h3>
-
       <VisibilityToggle visibility={visibility} setVisibility={setVisibility} />
 
       <textarea

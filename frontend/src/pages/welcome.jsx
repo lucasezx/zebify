@@ -1,5 +1,6 @@
 import { useAuth } from "../context/authContext.jsx";
 import { Navigate, useNavigate } from "react-router-dom";
+import { ArrowRight } from "lucide-react";
 
 const Welcome = () => {
   const { user, loading } = useAuth();
@@ -13,21 +14,36 @@ const Welcome = () => {
     );
   }
 
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
+  if (!user) return <Navigate to="/login" replace />;
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen">
-      <h1 className="text-2xl font-bold text-emerald-600 mb-4">
-        Olá, {user.firstName || user.name}! Bem-vindo ao Zebify.
-      </h1>
-      <button
-        onClick={() => navigate("/")}
-        className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition"
-      >
-        Ir para Home
-      </button>
+    <div className="w-full max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-center gap-16 min-h-screen px-6 py-12 bg-white animate-fade-in">
+      <div className="max-w-xl mb-10 md:mb-0">
+        <h1 className="text-5xl font-extrabold text-green-600 mb-2 flex items-center gap-2">
+          Bem-vindo
+        </h1>
+        <h2 className="text-xl text-black font-bold mb-4">
+          Olá, {user.firstName || user.name}!
+        </h2>
+        <p className="text-gray-600 mb-6">
+          Agora você faz parte da comunidade Zebify. Explore postagens, comente
+          e interaja com outros utilizadores!
+        </p>
+        <button
+          onClick={() => navigate("/")}
+          className="flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-full hover:bg-green-700 transition"
+        >
+          Continuar <ArrowRight size={20} />
+        </button>
+      </div>
+
+      <div className="max-w-md">
+        <img
+          src="/assets/welcome.svg"
+          alt="Ilustração de boas-vindas"
+          className="w-72 md:w-96"
+        />
+      </div>
     </div>
   );
 };

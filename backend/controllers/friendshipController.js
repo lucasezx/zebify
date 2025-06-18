@@ -109,11 +109,29 @@ export async function listUsers(req, res) {
 
 export async function listUsersWithStatus(req, res) {
   const userId = req.user.id;
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const offset = (page - 1) * limit;
+  const search = req.query.search?.toLowerCase() ?? "";
 
   try {
     const users = await allQuery(
-      `SELECT u.id, u.first_name || ' ' || u.last_name AS name, u.email, CASE WHEN f1.status = 'aceito' THEN 'amigos' WHEN f1.status = 'pendente' AND f1.sender_id = ? THEN 'pendente' WHEN f1.status = 'pendente' AND f1.receiver_id = ? THEN 'recebido' ELSE 'nenhum' END AS status FROM users u LEFT JOIN friendships f1 ON ((f1.sender_id = u.id AND f1.receiver_id = ?) OR (f1.sender_id = ? AND f1.receiver_id = u.id)) WHERE u.id != ?`,
-      [userId, userId, userId, userId, userId]
+      `SELECT u.id, u.first_name || ' ' || u.last_name AS name, u.email,
+        CASE
+          WHEN f1.status = 'aceito' THEN 'amigos'
+          WHEN f1.status = 'pendente' AND f1.sender_id = ? THEN 'pendente'
+          WHEN f1.status = 'pendente' AND f1.receiver_id = ? THEN 'recebido'
+          ELSE 'nenhum'
+        END AS status
+      FROM users u
+      LEFT JOIN friendships f1 ON
+        ((f1.sender_id = u.id AND f1.receiver_id = ?)
+        OR (f1.sender_id = ? AND f1.receiver_id = u.id))
+      WHERE u.id != ?
+      AND LOWER(u.first_name || ' ' || u.last_name) LIKE ?
+      ORDER BY u.first_name
+      LIMIT ? OFFSET ?`,
+      [userId, userId, userId, userId, userId, `%${search}%`, limit, offset]
     );
 
     res.json(users);

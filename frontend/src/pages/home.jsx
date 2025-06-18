@@ -65,11 +65,11 @@ const Home = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-100">
-      <main className="flex-1 pt-20">
-        <div className="max-w-3xl mx-auto px-4 space-y-8">
+      <main className="flex-1 pt-24 pb-16 bg-gray-100">
+        <div className="max-w-2xl mx-auto px-4 space-y-8">
           <header>
-            <h1 className="text-3xl font-bold text-emerald-700">
-              Bem-vindo ao Zebify
+            <h1 className="text-3xl font-extrabold text-emerald-600">
+              Bem-vindo ao <span className="text-green-700">Zebify</span>
             </h1>
             <p className="text-sm text-gray-500">
               Veja as últimas publicações dos seus amigos

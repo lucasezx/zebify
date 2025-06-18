@@ -59,7 +59,7 @@ const Login = () => {
             <form onSubmit={(e) => e.preventDefault()} className="space-y-4">
               <input
                 type="text"
-                placeholder="Email ou número de telemóvel"
+                placeholder="Email"
                 value={contact}
                 onChange={(e) => setContact(e.target.value)}
                 required

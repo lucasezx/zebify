@@ -11,50 +11,70 @@ const UsersPage = () => {
 
   const [utilizadores, setUtilizadores] = useState([]);
   const [loadingId, setLoadingId] = useState(null);
+  const [page, setPage] = useState(1);
+  const [hasMoreUsers, setHasMoreUsers] = useState(true);
+  const [search, setSearch] = useState("");
 
-  const carregarUtilizadores = useCallback(async () => {
-    try {
-      const res = await fetch(`${API}/api/users/with-status`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      setUtilizadores(data);
-    } catch (err) {
-      alert("Erro ao carregar utilizadores");
-    }
-  }, [token]);
+  const carregarUtilizadores = useCallback(
+    async (pagina = 1, termoBusca = "") => {
+      try {
+        const res = await fetch(
+          `${API}/api/users/with-status?page=${pagina}&limit=10&search=${encodeURIComponent(
+            termoBusca
+          )}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+
+        const data = await res.json();
+        setHasMoreUsers(data.length === 10);
+
+        if (pagina === 1) {
+          setUtilizadores(data);
+        } else {
+          setUtilizadores((prev) => [...prev, ...data]);
+        }
+      } catch (err) {
+        alert("Erro ao carregar utilizadores");
+      }
+    },
+    [token]
+  );
 
   useEffect(() => {
     if (user) {
-      carregarUtilizadores();
+      setPage(1);
+      carregarUtilizadores(1, search);
 
       const meuId = user.id;
 
+      const atualizar = () => {
+        setPage(1);
+        carregarUtilizadores(1, search);
+      };
+
       socket.on("pedido_enviado", ({ senderId, receiverId }) => {
         if (meuId === senderId || meuId === receiverId) {
-          console.log("🔄 Atualizando lista (pedido enviado)");
-          carregarUtilizadores();
+          atualizar();
         }
       });
 
       socket.on("pedido_cancelado", ({ senderId, receiverId }) => {
         if (meuId === senderId || meuId === receiverId) {
-          console.log("🚫 Pedido cancelado — atualizando lista");
-          carregarUtilizadores();
+          atualizar();
         }
       });
 
       socket.on("amizade_aceita", ({ userId1, userId2 }) => {
         if (meuId === userId1 || meuId === userId2) {
-          console.log("✅ Amizade aceita — recarregando lista");
-          carregarUtilizadores();
+          atualizar();
         }
       });
 
       socket.on("amizade_removida", ({ userId1, userId2 }) => {
         if (meuId === userId1 || meuId === userId2) {
-          console.log("❌ Amizade removida — recarregando lista");
-          carregarUtilizadores();
+          atualizar();
         }
       });
     }
@@ -66,6 +86,11 @@ const UsersPage = () => {
       socket.off("amizade_removida");
     };
   }, [user, carregarUtilizadores]);
+
+  useEffect(() => {
+    setPage(1);
+    carregarUtilizadores(1, search);
+  }, [search, carregarUtilizadores]);
 
   const executarAcao = async (url, method = "POST", body = null) => {
     try {
@@ -80,7 +105,8 @@ const UsersPage = () => {
         body: body ? JSON.stringify(body) : undefined,
       });
 
-      carregarUtilizadores();
+      setPage(1);
+      carregarUtilizadores(1);
     } finally {
       setLoadingId(null);
     }
@@ -88,105 +114,154 @@ const UsersPage = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-100">
-      <main className="flex-1 pt-20 px-6 max-w-4xl w-full mx-auto">
+      <main className="flex-1 pt-20 px-6 max-w-6xl w-full mx-auto">
         <h1 className="text-2xl font-bold mb-6">Utilizadores</h1>
 
-        {utilizadores
-          .filter((u) => u.id !== user?.id)
-          .map((u) => (
-            <div
-              key={u.id}
-              className="bg-white shadow-sm border border-gray-200 rounded-xl p-4 mb-4"
-            >
-              <p className="text-base mb-2">
-                <strong className="text-green-700">{u.name}</strong> -{" "}
-                <span className="text-gray-600">{u.email}</span>
-                <span
-                  className={`ml-3 px-3 py-1 rounded-full text-xs font-semibold text-white capitalize ${
-                    u.status === "amigos"
-                      ? "bg-green-600"
-                      : u.status === "pendente"
-                      ? "bg-yellow-500"
-                      : u.status === "recebido"
-                      ? "bg-blue-500"
-                      : "bg-gray-400"
-                  }`}
-                >
-                  {u.status}
-                </span>
+        <input
+          type="text"
+          placeholder="Pesquisar utilizadores..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="mb-6 px-4 py-2 border border-gray-300 rounded-lg w-full max-w-md"
+        />
+
+        {(() => {
+          const listaFiltrada = utilizadores.filter((u) => u.id !== user?.id);
+
+          if (listaFiltrada.length === 0) {
+            return (
+              <p className="text-center text-gray-500 mt-6">
+                O utilizador "{search}" não foi encontrado.
+                {search && (
+                  <span className="block mt-2">
+                    Tente pesquisar por outro nome.
+                  </span>
+                )}
               </p>
+            );
+          }
 
-              <div className="flex flex-wrap gap-3 mt-2">
-                {u.status === "amigos" && (
-                  <button
-                    onClick={() =>
-                      executarAcao(`${API}/api/friends/${u.id}`, "DELETE")
-                    }
-                    disabled={loadingId === u.id}
-                    className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition"
-                  >
-                    Remover amigo
-                  </button>
-                )}
-
-                {u.status === "pendente" && (
-                  <button
-                    onClick={() =>
-                      executarAcao(
-                        `${API}/api/friends/request/${u.id}`,
-                        "DELETE"
-                      )
-                    }
-                    disabled={loadingId === u.id}
-                    className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg text-sm transition"
-                  >
-                    Cancelar pedido
-                  </button>
-                )}
-
-                {u.status === "recebido" && (
-                  <>
-                    <button
-                      onClick={() =>
-                        executarAcao(`${API}/api/friends/accept`, "POST", {
-                          senderId: u.id,
-                        })
-                      }
-                      disabled={loadingId === u.id}
-                      className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition"
+          return (
+            <>
+              {listaFiltrada.map((u) => (
+                <div
+                  key={u.id}
+                  className="bg-white border border-gray-300 shadow-md rounded-xl p-6 mb-6 transition hover:shadow-lg"
+                >
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="bg-emerald-100 text-emerald-700 font-bold rounded-full w-10 h-10 flex items-center justify-center">
+                      {u.name[0].toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="text-base font-semibold text-gray-800">
+                        {u.name}
+                      </p>
+                      <p className="text-sm text-gray-500">{u.email}</p>
+                    </div>
+                    <span
+                      className={`ml-auto px-3 py-1 rounded-full text-xs font-semibold text-white capitalize ${
+                        u.status === "amigos"
+                          ? "bg-green-600"
+                          : u.status === "pendente"
+                          ? "bg-yellow-500"
+                          : u.status === "recebido"
+                          ? "bg-blue-500"
+                          : "bg-gray-400"
+                      }`}
                     >
-                      Aceitar
-                    </button>
-                    <button
-                      onClick={() =>
-                        executarAcao(`${API}/api/friends/reject`, "POST", {
-                          senderId: u.id,
-                        })
-                      }
-                      disabled={loadingId === u.id}
-                      className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition"
-                    >
-                      Recusar
-                    </button>
-                  </>
-                )}
+                      {u.status}
+                    </span>
+                  </div>
 
-                {u.status === "nenhum" && (
+                  <div className="flex flex-wrap gap-3 mt-2">
+                    {u.status === "amigos" && (
+                      <button
+                        onClick={() =>
+                          executarAcao(`${API}/api/friends/${u.id}`, "DELETE")
+                        }
+                        disabled={loadingId === u.id}
+                        className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition"
+                      >
+                        Remover amigo
+                      </button>
+                    )}
+
+                    {u.status === "pendente" && (
+                      <button
+                        onClick={() =>
+                          executarAcao(
+                            `${API}/api/friends/request/${u.id}`,
+                            "DELETE"
+                          )
+                        }
+                        disabled={loadingId === u.id}
+                        className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg text-sm transition"
+                      >
+                        Cancelar pedido
+                      </button>
+                    )}
+
+                    {u.status === "recebido" && (
+                      <>
+                        <button
+                          onClick={() =>
+                            executarAcao(`${API}/api/friends/accept`, "POST", {
+                              senderId: u.id,
+                            })
+                          }
+                          disabled={loadingId === u.id}
+                          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition"
+                        >
+                          Aceitar
+                        </button>
+                        <button
+                          onClick={() =>
+                            executarAcao(`${API}/api/friends/reject`, "POST", {
+                              senderId: u.id,
+                            })
+                          }
+                          disabled={loadingId === u.id}
+                          className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition"
+                        >
+                          Recusar
+                        </button>
+                      </>
+                    )}
+
+                    {u.status === "nenhum" && (
+                      <button
+                        onClick={() =>
+                          executarAcao(`${API}/api/friends/request`, "POST", {
+                            receiverId: u.id,
+                          })
+                        }
+                        disabled={loadingId === u.id}
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition"
+                      >
+                        Adicionar amigo
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+
+              {hasMoreUsers && listaFiltrada.length >= 10 && (
+                <div className="flex justify-center mt-4">
                   <button
-                    onClick={() =>
-                      executarAcao(`${API}/api/friends/request`, "POST", {
-                        receiverId: u.id,
-                      })
-                    }
-                    disabled={loadingId === u.id}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition"
+                    onClick={() => {
+                      const nextPage = page + 1;
+                      setPage(nextPage);
+                      carregarUtilizadores(nextPage, search);
+                    }}
+                    className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-4 rounded"
                   >
-                    Adicionar amigo
+                    Carregar mais
                   </button>
-                )}
-              </div>
-            </div>
-          ))}
+                </div>
+              )}
+            </>
+          );
+        })()}
       </main>
 
       <Footer />

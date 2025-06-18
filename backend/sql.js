@@ -17,7 +17,6 @@ export const createTables = () => {
       first_name  TEXT NOT NULL,
       last_name   TEXT NOT NULL,
       email       TEXT UNIQUE,
-      phone       TEXT UNIQUE,
       password    TEXT NOT NULL,
       gender      TEXT NOT NULL CHECK(gender IN ('feminino','masculino')),
       birth_date  TEXT NOT NULL,
@@ -35,7 +34,7 @@ export const createTables = () => {
       imagem_path TEXT,
       visibility  TEXT NOT NULL DEFAULT 'public'
                   CHECK (visibility IN ('public','friends','private')),
-      created_at  TEXT DEFAULT (datetime('now')),
+      created_at  TEXT DEFAULT (datetime('now')), editado BOOLEAN DEFAULT 0,
       FOREIGN KEY (user_id) REFERENCES users(id)
     )`);
 

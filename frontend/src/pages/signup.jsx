@@ -60,12 +60,11 @@ export default function Signup() {
     if (!form.lastName.trim()) novoErros.lastName = "Informe o apelido";
 
     if (!form.contact.trim()) {
-      novoErros.contact = "Introduza e-mail ou nº de telemóvel";
+      novoErros.contact = "Introduza um e-mail válido";
     } else {
       const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.contact);
-      const phoneOk = /^\d{9}$/.test(form.contact);
-      if (!emailOk && !phoneOk) {
-        novoErros.contact = "Contacto inválido (e-mail ou 9 dígitos)";
+      if (!emailOk) {
+        novoErros.contact = "E-mail inválido";
       }
     }
 
@@ -258,7 +257,7 @@ export default function Signup() {
 
             <input
               name="contact"
-              placeholder="Email ou número de telemóvel"
+              placeholder="Email"
               value={form.contact}
               onChange={handleChange}
               className={`${inputBase} ${erros.contact && "border-yellow-500"}`}
@@ -313,7 +312,7 @@ export default function Signup() {
             </button>
 
             <p className="text-xs text-gray-600 text-center mt-2">
-              Poderás receber notificações nossas por SMS e cancelá-las a
+              Poderás receber notificações nossas por E-mail e cancelá-las a
               qualquer altura.
             </p>
             <p className="text-sm text-center text-gray-600">

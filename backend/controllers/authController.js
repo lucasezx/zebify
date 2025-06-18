@@ -2,24 +2,14 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { runQuery, allQuery } from "../sql.js";
 import { sendVerificationEmail } from "../utils/email.js";
-import { getDaysInMonth } from "../utils/date.js";
-import { sendVerificationSMS } from "../utils/sms.js";
 
 const JWT_SECRET = process.env.JWT_SECRET || "zebify_super_secreto";
 
 export async function signup(req, res) {
   console.log("BODY RECEBIDO:", req.body);
-  const { firstName, lastName, contact, password, gender, birthDate } =
-    req.body;
+  const { firstName, lastName, contact, password, gender, birthDate } = req.body;
 
-  if (
-    !firstName ||
-    !lastName ||
-    !contact ||
-    !password ||
-    !gender ||
-    !birthDate
-  ) {
+  if (!firstName || !lastName || !contact || !password || !gender || !birthDate) {
     return res.status(400).json({ error: "Todos os campos são obrigatórios" });
   }
 
@@ -40,29 +30,21 @@ export async function signup(req, res) {
   }
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  const phoneRegex = /^(\+?\d{9,15})$/;
-  let email = null;
-  let phone = null;
-
-  if (emailRegex.test(contact)) {
-    email = contact.toLowerCase();
-  } else if (phoneRegex.test(contact)) {
-    phone = contact;
-  } else {
-    return res
-      .status(400)
-      .json({ error: "Contacto inválido (e-mail ou 9 dígitos)" });
+  if (!emailRegex.test(contact)) {
+    return res.status(400).json({ error: "Insira um e-mail válido" });
   }
+
+  const email = contact.toLowerCase();
 
   try {
     const existing = await allQuery(
-      `SELECT id FROM users WHERE email = ? OR phone = ?`,
-      [email, phone]
+      `SELECT id FROM users WHERE email = ?`,
+      [email]
     );
     if (existing.length > 0) {
       return res
         .status(409)
-        .json({ error: "Este e-mail ou número já está em uso" });
+        .json({ error: "Este e-mail já está em uso" });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -70,20 +52,15 @@ export async function signup(req, res) {
       100000 + Math.random() * 900000
     ).toString();
 
-    if (phone) {
-      await sendVerificationSMS(phone, verificationCode);
-    } else if (email) {
-      await sendVerificationEmail(email, verificationCode);
-    }
+    await sendVerificationEmail(email, verificationCode);
 
     await runQuery(
-      `INSERT INTO users (first_name, last_name, email, phone, password, gender, birth_date, verification_code, is_verified)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO users (first_name, last_name, email, password, gender, birth_date, verification_code, is_verified)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         firstName,
         lastName,
         email,
-        phone,
         hashedPassword,
         gender,
         birthDate,
@@ -107,16 +84,16 @@ export async function login(req, res) {
   if (!contact || !password) {
     return res
       .status(400)
-      .json({ error: "Contacto e palavra-passe são obrigatórios!" });
+      .json({ error: "E-mail e palavra-passe são obrigatórios!" });
   }
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  const query = emailRegex.test(contact)
-    ? `SELECT * FROM users WHERE email = ?`
-    : `SELECT * FROM users WHERE phone = ?`;
+  if (!emailRegex.test(contact)) {
+    return res.status(400).json({ error: "E-mail inválido" });
+  }
 
   try {
-    const users = await allQuery(query, [contact]);
+    const users = await allQuery(`SELECT * FROM users WHERE email = ?`, [contact]);
     const user = users[0];
 
     if (!user) {
@@ -125,7 +102,7 @@ export async function login(req, res) {
 
     if (!user.is_verified) {
       return res.status(403).json({
-        error: "Conta ainda não verificada. Verifique seu e-mail ou SMS.",
+        error: "Conta ainda não verificada. Verifique seu e-mail.",
       });
     }
 
@@ -138,7 +115,7 @@ export async function login(req, res) {
       {
         id: user.id,
         firstName: user.first_name,
-        contact: user.email || user.phone,
+        contact: user.email,
       },
       JWT_SECRET,
       { expiresIn: "1h" }
@@ -151,7 +128,7 @@ export async function login(req, res) {
         id: user.id,
         firstName: user.first_name,
         lastName: user.last_name,
-        contact: user.email || user.phone,
+        contact: user.email,
         birth_date: user.birth_date,
         name: `${user.first_name} ${user.last_name}`,
       },
@@ -166,12 +143,12 @@ export async function verifyCode(req, res) {
   const { contact, code } = req.body;
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  const campo = emailRegex.test(contact) ? "email" : "phone";
+  if (!emailRegex.test(contact)) {
+    return res.status(400).json({ error: "E-mail inválido." });
+  }
 
   try {
-    const users = await allQuery(`SELECT * FROM users WHERE ${campo} = ?`, [
-      contact,
-    ]);
+    const users = await allQuery(`SELECT * FROM users WHERE email = ?`, [contact]);
     const user = users[0];
 
     if (!user) {

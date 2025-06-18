@@ -97,25 +97,32 @@ export default function PostCard({
   };
 
   return (
-    <article className="bg-white border border-green-500 rounded-md p-6 shadow-md mb-6">
+    <article className="bg-white border border-gray-400 shadow-sm hover:shadow-md rounded-xl p-6 transition">
       <header className="flex justify-between items-start">
-        <div className="flex flex-col gap-1">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-base font-semibold text-green-800">
-              @{post.author}
-            </span>
-            {post.visibility && (
-              <span className="text-sm text-blue-600 flex items-center gap-1">
-                {visibilityIcons[post.visibility]}
-              </span>
-            )}
+        <div className="flex items-center gap-3">
+          <div className="bg-emerald-100 text-emerald-700 font-bold rounded-full w-8 h-8 flex items-center justify-center">
+            {post.author[0]?.toUpperCase()}
           </div>
-          <p className="text-xs text-gray-500 flex items-center gap-2">
-            {formatarData(post.created_at)}
-            {post.editado === 1 && (
-              <span className="text-gray-400 italic">(editado)</span>
-            )}
-          </p>
+
+          <div className="flex flex-col">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-sm font-semibold text-gray-800">
+                @{post.author}
+              </span>
+              {post.visibility && (
+                <span className="text-xs text-blue-600">
+                  {visibilityIcons[post.visibility]}
+                </span>
+              )}
+            </div>
+
+            <span className="text-xs text-gray-400">
+              {formatarData(post.created_at)}
+              {post.editado === 1 && (
+                <span className="text-gray-400 italic"> (editado)</span>
+              )}
+            </span>
+          </div>
         </div>
 
         {isOwner && post.user_id === user?.id && (
@@ -221,14 +228,14 @@ export default function PostCard({
           )}
 
           {post.conteudo && (
-            <p className="text-gray-800 text-base whitespace-pre-wrap break-words leading-relaxed">
+            <p className="text-gray-800 text-[15px] leading-relaxed whitespace-pre-wrap">
               {textoCurto
                 ? `${post.conteudo.slice(0, LIMITE)}...`
                 : post.conteudo}
 
               {post.conteudo.length > LIMITE && (
                 <button
-                  className="ml-2 text-emerald-600 text-sm"
+                  className="ml-1 text-emerald-600 text-sm hover:underline"
                   onClick={() => setVerMais(!verMais)}
                 >
                   {verMais ? "ver menos" : "ver mais"}
@@ -244,7 +251,7 @@ export default function PostCard({
       )}
 
       {showComments && (
-        <section className="pt-4 border-t mt-4">
+        <section className="pt-4 border-t mt-6">
           <h3 className="text-sm font-semibold text-gray-700 mb-2">
             Comentários
           </h3>

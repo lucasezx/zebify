@@ -7,8 +7,8 @@ const PrivateRoute = ({ children }) => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen text-gray-500">
-        Carregando...
+      <div className="text-center py-10 text-gray-400 italic animate-pulse">
+        Carregando publicações...
       </div>
     );
   }

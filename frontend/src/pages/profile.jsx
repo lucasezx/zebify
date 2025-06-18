@@ -140,57 +140,57 @@ const Profile = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-100">
-      <main className="flex-1 pt-20 px-4 max-w-4xl w-full mx-auto">
-        <h1 className="text-3xl font-bold mb-6">Meu Perfil</h1>
+      <main className="flex-1 pt-24 px-4 max-w-3xl w-full mx-auto">
+        <div className="bg-white/10 border border-gray-400 rounded-2xl p-8 shadow-lg mb-10 relative overflow-hidden">
+          <div className="absolute -top-8 -right-8 w-32 h-32 bg-gradient-to-br from-blue-300 via-purple-200 to-pink-200 rounded-full opacity-30 pointer-events-none" />
+          <h1 className="text-4xl font-extrabold mb-2 text-green-800 drop-shadow-sm">
+            Meu Perfil
+          </h1>
+          <p className="text-lg text-gray-500 mb-6">Gerencie suas informações pessoais e veja suas publicações.</p>
 
-        {/* Caixa com os dados do perfil */}
-        <div className="bg-white border border-gray-300 rounded-lg p-6 shadow-sm mb-6">
-          <h2 className="text-xl font-bold text-gray-700 mb-4">
-            Informações do Perfil
-          </h2>
-
-          <div className="space-y-2 text-lg text-gray-800 font-semibold">
-            <p>
-              <strong>Nome:</strong>{" "}
+          <div className="space-y-4 text-lg text-gray-800 font-semibold">
+            <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
+              <span className="w-32 text-gray-600 font-bold">Nome:</span>
               {editando ? (
                 <input
                   type="text"
                   value={nome}
                   onChange={(e) => setNome(e.target.value)}
-                  className={`border px-2 py-1 rounded font-normal text-base ${
+                  className={`border px-3 py-2 rounded-lg font-normal text-base shadow-sm focus:ring-2 focus:ring-purple-300 transition ${
                     erros.nome && "border-red-500"
                   }`}
                 />
               ) : (
-                nome
+                <span>{nome}</span>
               )}
-            </p>
-            <p>
-              <strong>Apelido:</strong>{" "}
+            </div>
+            <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
+              <span className="w-32 text-gray-600 font-bold">Apelido:</span>
               {editando ? (
                 <input
                   type="text"
                   value={apelido}
                   onChange={(e) => setApelido(e.target.value)}
-                  className={`border px-2 py-1 rounded font-normal text-base ${
+                  className={`border px-3 py-2 rounded-lg font-normal text-base shadow-sm focus:ring-2 focus:ring-purple-300 transition ${
                     erros.apelido && "border-red-500"
                   }`}
                 />
               ) : (
-                apelido
+                <span>{apelido}</span>
               )}
-            </p>
-            <p>
-              <strong>Email:</strong> {user.email || user.contact}
-            </p>
-            <p className="flex items-center gap-2 flex-wrap">
-              <strong>Idade:</strong>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
+              <span className="w-32 text-gray-600 font-bold">Email:</span>
+              <span>{user.email || user.contact}</span>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
+              <span className="w-32 text-gray-600 font-bold">Idade:</span>
               {editando ? (
-                <>
+                <div className="flex gap-2 flex-wrap w-full">
                   <select
                     value={dia}
                     onChange={(e) => setDia(e.target.value)}
-                    className={`border px-2 py-2 rounded font-normal text-base w-full sm:w-auto appearance-none pr-8 ${
+                    className={`border px-2 py-2 rounded-lg font-normal text-base w-24 appearance-none shadow-sm focus:ring-2 focus:ring-purple-300 transition ${
                       erros.birthDate && "border-red-500"
                     }`}
                   >
@@ -212,7 +212,7 @@ const Profile = () => {
                   <select
                     value={mes}
                     onChange={(e) => setMes(e.target.value)}
-                    className={`border px-2 py-2 rounded font-normal text-base w-full sm:w-auto appearance-none pr-8 ${
+                    className={`border px-2 py-2 rounded-lg font-normal text-base w-28 appearance-none shadow-sm focus:ring-2 focus:ring-purple-300 transition ${
                       erros.birthDate && "border-red-500"
                     }`}
                   >
@@ -242,7 +242,7 @@ const Profile = () => {
                   <select
                     value={ano}
                     onChange={(e) => setAno(e.target.value)}
-                    className={`border px-2 py-2 rounded font-normal text-base w-full sm:w-auto appearance-none pr-8 ${
+                    className={`border px-2 py-2 rounded-lg font-normal text-base w-28 appearance-none shadow-sm focus:ring-2 focus:ring-purple-300 transition ${
                       erros.birthDate && "border-red-500"
                     }`}
                   >
@@ -261,70 +261,80 @@ const Profile = () => {
                       {erros.birthDate}
                     </p>
                   )}
-                </>
+                </div>
               ) : user.birth_date ? (
-                `${idade} anos`
+                <span>{idade} anos</span>
               ) : (
-                "Não informado"
+                <span className="italic text-gray-400">Não informado</span>
               )}
-            </p>
+            </div>
           </div>
 
-          <div className="mt-6 flex gap-2">
+          <div className="mt-8 flex gap-3">
             {editando ? (
               <>
                 <button
                   onClick={salvarAlteracoes}
-                  className="bg-green-600 text-white px-6 py-1 rounded hover:bg-green-700 font-bold text-lg"
+                  className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg shadow transition-all duration-150 border border-green-700/30 focus:outline-none focus:ring-2 focus:ring-green-400"
                 >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
                   Salvar
                 </button>
                 <button
                   onClick={() => setEditando(false)}
-                  className="bg-red-600 text-white px-6 py-1 rounded hover:bg-gray-400 font-bold text-lg"
+                  className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg shadow border border-red-700/30 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-red-400"
                 >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
                   Cancelar
                 </button>
               </>
             ) : (
               <button
                 onClick={() => setEditando(true)}
-                className="bg-blue-600 text-white px-4 py-1 rounded hover:bg-blue-700 font-bold text-lg"
+                className="bg-gradient-to-r from-green-500 to-blue-500 text-white px-6 py-2 rounded-lg hover:from-blue-600 hover:to-green-600 flex items-center gap-2"
               >
-                ✏️ Editar Perfil
+                <span role="img" aria-label="Editar">✏️</span> Editar Perfil
               </button>
             )}
           </div>
 
           {mensagem && (
-            <p className="mt-3 text-green-600 text-lg font-bold">{mensagem}</p>
+            <p className="mt-4 text-green-700 text-lg font-bold">{mensagem}</p>
           )}
         </div>
 
-        {/* Publicações */}
-        <h2 className="text-xl font-bold text-gray-700 mb-4">
+        <h2 className="text-2xl font-bold text-green-700 mb-4 mt-10">
           Minhas Publicações
         </h2>
-        {meusPosts.map((post) => (
-          <PostCard
-            key={post.id}
-            post={post}
-            isOwner={true}
-            showComments={false}
-            onChange={async () => {
-              try {
-                const res = await fetch(`${API}/api/my-posts`, {
-                  headers: { Authorization: `Bearer ${token}` },
-                });
-                if (!res.ok) throw new Error(await res.text());
-                const data = await res.json();
-                setMeusPosts(data);
-              } catch (err) {
-                console.error("Erro ao atualizar posts:", err.message);
-              }
-            }}
-          />
-        ))}
+        <div className="space-y-6">
+          {meusPosts.length === 0 && (
+            <div className="text-gray-400 italic text-lg">Você ainda não publicou nada.</div>
+          )}
+          {meusPosts.map((post) => (
+            <PostCard
+              key={post.id}
+              post={post}
+              isOwner={true}
+              showComments={false}
+              onChange={async () => {
+                try {
+                  const res = await fetch(`${API}/api/my-posts`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                  });
+                  if (!res.ok) throw new Error(await res.text());
+                  const data = await res.json();
+                  setMeusPosts(data);
+                } catch (err) {
+                  console.error("Erro ao atualizar posts:", err.message);
+                }
+              }}
+            />
+          ))}
+        </div>
       </main>
       <Footer />
     </div>
