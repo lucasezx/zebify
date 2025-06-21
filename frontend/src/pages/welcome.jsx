@@ -1,6 +1,5 @@
 import { useAuth } from "../context/authContext.jsx";
 import { Navigate, useNavigate } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
 
 const Welcome = () => {
   const { user, loading } = useAuth();
@@ -33,7 +32,7 @@ const Welcome = () => {
           onClick={() => navigate("/")}
           className="flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-full hover:bg-green-700 transition"
         >
-          Continuar <ArrowRight size={20} />
+          Continuar ➪
         </button>
       </div>
 
