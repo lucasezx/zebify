@@ -8,9 +8,9 @@ Zebify é uma aplicação fullstack que simula uma rede social, desenvolvida com
 
 ```
 zebify/
-├── backend/       # API REST com Express e autenticação JWT
-├── frontend/      # Interface do usuário com React + Tailwind
-└── setup.sh       # Script para configuração automática em novas máquinas
+├── backend/       API REST com Express e autenticação JWT
+├── frontend/      Interface do usuário com React + Tailwind
+└── setup.sh       Script de configuração automática (nvm + npm ci)
 ```
 
 ---
@@ -32,8 +32,8 @@ cd zebify
 
 Esse script:
 
-- Usa Node.js v18 com `nvm`
-- Instala todas as dependências do frontend e backend
+- Usa automaticamente o Node.js **v22** via [nvm](https://github.com/nvm-sh/nvm)
+- Instala as dependências do frontend e backend com `npm ci`
 - Prepara o ambiente em qualquer máquina nova
 
 ---
@@ -47,31 +47,27 @@ JWT_SECRET=<zebify_super_secreto>
 PORT=3001
 ```
 
-> Esse arquivo **não é versionado** por segurança (`.env` está incluído no `.gitignore`).
+> Esse arquivo **não é versionado** por segurança (`.env` está incluído no `.gitignore`)
 
 ---
 
-## 💻 Executar o Frontend
+## 💻 Executar o Projeto
 
-O frontend usa [Tailwind CSS](https://tailwindcss.com) para os estilos.
+### Backend (API)
 
-1. Acesse a pasta:
+```bash
+cd backend
+npm start    # ou: node server.js
+```
+
+### Frontend (React + Vite)
 
 ```bash
 cd frontend
+npm run dev
 ```
 
-2. Inicie a aplicação:
-
-```bash
-npm start
-```
-
-Tailwind está configurado em:
-
-- `tailwind.config.js`
-- `postcss.config.js`
-- `src/index.css`
+A aplicação estará acessível em `http://localhost:5173`
 
 ---
 
@@ -90,17 +86,20 @@ Tailwind está configurado em:
 - JSON Web Token (JWT)
 - bcrypt
 - dotenv
+- SQLite3
+- Socket.IO
 
 ---
 
 ## ✅ Boas Práticas
 
-- Sempre use Node.js 18 (definido em `.nvmrc`)
-- Nunca envie `node_modules/` para o Git
-- Use `./setup.sh` sempre que mudar de máquina ou clonar o projeto
+- Use **Node.js 22** (definido em `.nvmrc`)
+- Rode `./setup.sh` sempre que clonar ou reinstalar o projeto
+- Nunca envie `node_modules/` ou `.env` para o Git
+- Faça commits limpos e frequentes
 
 ---
 
 ## 📄 Licença
 
-Projeto acadêmico desenvolvido com fins educacionais.
+Projeto acadêmico desenvolvido com fins educacionais — PAP (Prova de Aptidão Profissional).
