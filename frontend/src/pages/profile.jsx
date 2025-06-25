@@ -4,6 +4,7 @@ import { Navigate } from "react-router-dom";
 import Footer from "../components/footer";
 import PostCard from "../components/postCard";
 import { getDaysInMonth } from "../../../backend/utils/date";
+import Avatar from "../components/avatar";
 
 const API = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
 
@@ -38,6 +39,9 @@ const Profile = () => {
   const [mes, setMes] = useState("");
   const [ano, setAno] = useState("");
   const [erros, setErros] = useState({});
+  const [avatarPreview, setAvatarPreview] = useState(user?.avatar_url || null);
+  const [avatarFile, setAvatarFile] = useState(null);
+  const [avatarRemoved, setAvatarRemoved] = useState(false);
 
   useEffect(() => {
     if (user?.birth_date) {
@@ -116,20 +120,42 @@ const Profile = () => {
           birthDate: birthDateStr,
         }),
       });
-
-      const data = await res.json();
-      if (res.ok) {
-        login({
-          ...user,
-          firstName: nome,
-          lastName: apelido,
-          birth_date: birthDateStr,
-        });
-        setMensagem("Perfil atualizado com sucesso.");
-        setEditando(false);
-      } else {
-        setMensagem(data.error || "Erro ao atualizar.");
+      if (!res.ok) {
+        const err = await res.json();
+        setMensagem(err.error || "Erro ao atualizar.");
+        return;
       }
+
+      let userAtualizado = {
+        ...user,
+        firstName: nome,
+        lastName: apelido,
+        birth_date: birthDateStr,
+      };
+
+      if (avatarFile) {
+        const fd = new FormData();
+        fd.append("avatar", avatarFile);
+        const up = await fetch(`${API}/api/users/avatar`, {
+          method: "PUT",
+          headers: { Authorization: `Bearer ${token}` },
+          body: fd,
+        });
+        if (up.ok) userAtualizado = await up.json();
+      }
+
+      if (avatarRemoved && !avatarFile) {
+        const del = await fetch(`${API}/api/users/avatar`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (del.ok) userAtualizado = await del.json();
+      }
+
+      login(userAtualizado);
+      setEditando(false);
+      setMensagem("Perfil atualizado com sucesso.");
+      setAvatarRemoved(false);
     } catch (err) {
       console.error(err);
       setMensagem("Erro na requisição.");
@@ -142,11 +168,56 @@ const Profile = () => {
     <div className="min-h-screen flex flex-col bg-gray-100">
       <main className="flex-1 pt-24 px-4 max-w-3xl w-full mx-auto">
         <div className="bg-white/10 border border-gray-400 rounded-2xl p-8 shadow-lg mb-10 relative overflow-hidden">
-          <div className="absolute -top-8 -right-8 w-32 h-32 bg-gradient-to-br from-blue-300 via-purple-200 to-pink-200 rounded-full opacity-30 pointer-events-none" />
+          <div className="absolute top-6 right-6 z-10">
+            <div className="relative group w-24 h-24">
+              <Avatar url={avatarPreview} name={user.firstName} size={96} />
+
+              {editando && (
+                <>
+                  <div className="absolute inset-0 bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-3">
+                    <label className="cursor-pointer text-white text-xl hover:scale-110 transition">
+                      📷
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files[0];
+                          if (file) {
+                            setAvatarFile(file);
+                            setAvatarPreview(URL.createObjectURL(file));
+                            setAvatarRemoved(false);
+                          }
+                        }}
+                      />
+                    </label>
+
+                    {(avatarPreview || user.avatar_url) && (
+                      <button
+                        type="button"
+                        className="text-white text-xl hover:scale-110 transition"
+                        onClick={() => {
+                          setAvatarPreview(null);
+                          setAvatarFile(null);
+                          setAvatarRemoved(true);
+                        }}
+                        title="Remover foto"
+                      >
+                        ❌
+                      </button>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+
           <h1 className="text-4xl font-extrabold mb-2 text-green-800 drop-shadow-sm">
             Meu Perfil
           </h1>
-          <p className="text-lg text-gray-500 mb-6">Gerencie suas informações pessoais e veja suas publicações.</p>
+          <p className="text-lg text-gray-500 mb-6">
+            Gerencie suas informações pessoais e veja suas publicações.
+          </p>
 
           <div className="space-y-4 text-lg text-gray-800 font-semibold">
             <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
@@ -277,8 +348,18 @@ const Profile = () => {
                   onClick={salvarAlteracoes}
                   className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg shadow transition-all duration-150 border border-green-700/30 focus:outline-none focus:ring-2 focus:ring-green-400"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M5 13l4 4L19 7"
+                    />
                   </svg>
                   Salvar
                 </button>
@@ -286,8 +367,18 @@ const Profile = () => {
                   onClick={() => setEditando(false)}
                   className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg shadow border border-red-700/30 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-red-400"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M6 18L18 6M6 6l12 12"
+                    />
                   </svg>
                   Cancelar
                 </button>
@@ -297,7 +388,10 @@ const Profile = () => {
                 onClick={() => setEditando(true)}
                 className="bg-gradient-to-r from-green-500 to-blue-500 text-white px-6 py-2 rounded-lg hover:from-blue-600 hover:to-green-600 flex items-center gap-2"
               >
-                <span role="img" aria-label="Editar">✏️</span> Editar Perfil
+                <span role="img" aria-label="Editar">
+                  ✏️
+                </span>{" "}
+                Editar Perfil
               </button>
             )}
           </div>
@@ -312,7 +406,9 @@ const Profile = () => {
         </h2>
         <div className="space-y-6">
           {meusPosts.length === 0 && (
-            <div className="text-gray-400 italic text-lg">Você ainda não publicou nada.</div>
+            <div className="text-gray-400 italic text-lg">
+              Você ainda não publicou nada.
+            </div>
           )}
           {meusPosts.map((post) => (
             <PostCard

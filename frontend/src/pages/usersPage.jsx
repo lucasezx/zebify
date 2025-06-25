@@ -85,7 +85,7 @@ const UsersPage = () => {
       socket.off("amizade_aceita");
       socket.off("amizade_removida");
     };
-  }, [user, carregarUtilizadores]);
+  }, [user, carregarUtilizadores, search]);
 
   useEffect(() => {
     setPage(1);
@@ -106,7 +106,7 @@ const UsersPage = () => {
       });
 
       setPage(1);
-      carregarUtilizadores(1);
+      carregarUtilizadores(1, search);
     } finally {
       setLoadingId(null);
     }

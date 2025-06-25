@@ -21,6 +21,7 @@ export const createTables = () => {
       gender      TEXT NOT NULL CHECK(gender IN ('feminino','masculino')),
       birth_date  TEXT NOT NULL,
       created_at  TEXT DEFAULT (datetime('now')),
+      avatar_url  TEXT,
       is_verified INTEGER DEFAULT 0,
       verification_code TEXT
     )`);

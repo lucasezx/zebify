@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import CommentBox from "./commentBox";
 import { updatePost, deletePost } from "../services/posts";
 import socket from "../socket";
+import Avatar from "./avatar";
 
 const API = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
 
@@ -100,9 +101,7 @@ export default function PostCard({
     <article className="bg-white border border-gray-400 shadow-sm hover:shadow-md rounded-xl p-6 transition">
       <header className="flex justify-between items-start">
         <div className="flex items-center gap-3">
-          <div className="bg-emerald-100 text-emerald-700 font-bold rounded-full w-8 h-8 flex items-center justify-center">
-            {post.author[0]?.toUpperCase()}
-          </div>
+          <Avatar url={post.avatar_url} name={post.author} size={32} />
 
           <div className="flex flex-col">
             <div className="flex items-center gap-2 flex-wrap">

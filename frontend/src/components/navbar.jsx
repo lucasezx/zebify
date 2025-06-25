@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/authContext";
 import { FaUsers, FaHome, FaUser, FaPlus } from "react-icons/fa";
 import logoTexto from "../../assets/logoTexto.png";
+import Avatar from "./avatar";
 
 const API = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
 
@@ -101,13 +102,11 @@ const Navbar = () => {
               <div
                 onClick={() => navigate("/profile")}
                 title="Perfil"
-                className={`w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 font-bold flex items-center justify-center cursor-pointer shadow text-sm transition hover:scale-105 ${
-                  location.pathname === "/profile"
-                    ? "ring-2 ring-emerald-400"
-                    : ""
+                className={`cursor-pointer transition hover:scale-105 ${
+                  location.pathname === "/profile" ? "ring-2 ring-emerald-400 rounded-full" : ""
                 }`}
               >
-                {user.firstName?.[0]?.toUpperCase()}
+                <Avatar url={user.avatar_url} name={user.firstName} size={32} />
               </div>
 
               <span className="text-sm text-gray-700 whitespace-nowrap font-semibold ml-4">
