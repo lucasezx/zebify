@@ -91,6 +91,7 @@ const Navbar = () => {
         <div className="flex items-center gap-4">
           {user ? (
             <>
+              {/* Ícones de navegação */}
               <Item Icon={FaHome} to="/" title="Feed" />
               <Item Icon={FaPlus} to="/new-post" title="Nova publicação" />
               <Item
@@ -99,28 +100,39 @@ const Navbar = () => {
                 badge={pedidos}
                 title="Utilizadores / Pedidos"
               />
-              <div
-                onClick={() => navigate("/profile")}
-                title="Perfil"
-                className={`cursor-pointer transition hover:scale-105 ${
-                  location.pathname === "/profile" ? "ring-2 ring-emerald-400 rounded-full" : ""
-                }`}
-              >
-                <Avatar url={user.avatar_url} name={user.firstName} size={32} />
-              </div>
 
-              <span className="text-sm text-gray-700 whitespace-nowrap font-semibold ml-4">
-                Olá,{" "}
-                <span className="text-emerald-600">
-                  {user.firstName} {user.lastName}
+              {/* Avatar + Olá + Sair */}
+              <div className="flex items-center gap-3 ml-4">
+                <div
+                  onClick={() => navigate("/profile")}
+                  title="Perfil"
+                  className={`cursor-pointer transition hover:scale-105 ${
+                    location.pathname === "/profile"
+                      ? "ring-2 ring-emerald-400 rounded-full"
+                      : ""
+                  }`}
+                >
+                  <Avatar
+                    url={user.avatar_url}
+                    name={user.firstName}
+                    size={32}
+                  />
+                </div>
+
+                <span className="text-sm text-gray-700 whitespace-nowrap font-semibold">
+                  Olá,{" "}
+                  <span className="text-emerald-600">
+                    {user.firstName} {user.lastName}
+                  </span>
                 </span>
-              </span>
-              <button
-                onClick={handleLogout}
-                className="ml-2 bg-red-500 text-white px-4 py-1.5 rounded-lg hover:bg-red-600 text-sm font-semibold shadow transition"
-              >
-                Sair
-              </button>
+
+                <button
+                  onClick={handleLogout}
+                  className="bg-red-500 text-white px-4 py-1.5 rounded-lg hover:bg-red-600 text-sm font-semibold shadow transition"
+                >
+                  Sair
+                </button>
+              </div>
             </>
           ) : (
             <>

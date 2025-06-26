@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import { useAuth } from "../context/authContext";
 import socket from "../socket";
 import Footer from "../components/footer";
+import Avatar from "../components/avatar";
 
 const API = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
 
@@ -149,9 +150,12 @@ const UsersPage = () => {
                   className="bg-white border border-gray-300 shadow-md rounded-xl p-6 mb-6 transition hover:shadow-lg"
                 >
                   <div className="flex items-center gap-4 mb-4">
-                    <div className="bg-emerald-100 text-emerald-700 font-bold rounded-full w-10 h-10 flex items-center justify-center">
-                      {u.name[0].toUpperCase()}
-                    </div>
+                    <Avatar
+                      url={u.avatar_url}
+                      name={u.name?.split(" ")[0]}
+                      size={40}
+                    />
+
                     <div>
                       <p className="text-base font-semibold text-gray-800">
                         {u.name}

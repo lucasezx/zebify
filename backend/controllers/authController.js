@@ -130,6 +130,7 @@ export async function login(req, res) {
         lastName: user.last_name,
         contact: user.email,
         birth_date: user.birth_date,
+        avatar_url: user.avatar_url,
         name: `${user.first_name} ${user.last_name}`,
       },
     });

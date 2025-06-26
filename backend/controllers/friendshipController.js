@@ -99,7 +99,13 @@ export async function listFriendRequests(req, res) {
 
 export async function listUsers(req, res) {
   try {
-    const users = await allQuery(`SELECT id, name, email FROM users`);
+    const users = await allQuery(
+      `SELECT id,
+            first_name || ' ' || last_name AS name,
+            email,
+            avatar_url                       AS avatar_url   -- 👈
+      FROM users`
+    );
     res.json(users);
   } catch (err) {
     console.error(err);
@@ -116,13 +122,17 @@ export async function listUsersWithStatus(req, res) {
 
   try {
     const users = await allQuery(
-      `SELECT u.id, u.first_name || ' ' || u.last_name AS name, u.email,
-        CASE
-          WHEN f1.status = 'aceito' THEN 'amigos'
-          WHEN f1.status = 'pendente' AND f1.sender_id = ? THEN 'pendente'
-          WHEN f1.status = 'pendente' AND f1.receiver_id = ? THEN 'recebido'
-          ELSE 'nenhum'
-        END AS status
+      `SELECT
+    u.id,
+    u.first_name || ' ' || u.last_name AS name,
+    u.email,
+    u.avatar_url                        AS avatar_url,
+    CASE
+        WHEN f1.status = 'aceito'                                             THEN 'amigos'
+        WHEN f1.status = 'pendente' AND f1.sender_id   = ?                    THEN 'pendente'
+        WHEN f1.status = 'pendente' AND f1.receiver_id = ?                    THEN 'recebido'
+        ELSE 'nenhum'
+    END AS status
       FROM users u
       LEFT JOIN friendships f1 ON
         ((f1.sender_id = u.id AND f1.receiver_id = ?)

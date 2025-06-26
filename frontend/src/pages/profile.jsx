@@ -54,6 +54,10 @@ const Profile = () => {
   }, [user]);
 
   useEffect(() => {
+    setAvatarPreview(user?.avatar_url || null);
+  }, [user?.avatar_url]);
+
+  useEffect(() => {
     if (!user) return;
     const fetchMinhasPublicacoes = async () => {
       try {
@@ -131,6 +135,7 @@ const Profile = () => {
         firstName: nome,
         lastName: apelido,
         birth_date: birthDateStr,
+        avatar_url: user.avatar_url,
       };
 
       if (avatarFile) {
