@@ -175,7 +175,11 @@ const Profile = () => {
         <div className="bg-white/10 border border-gray-400 rounded-2xl p-8 shadow-lg mb-10 relative overflow-hidden">
           <div className="absolute top-6 right-6 z-10">
             <div className="relative group w-24 h-24">
-              <Avatar url={avatarPreview} name={user.firstName} size={96} />
+              <Avatar
+                url={avatarPreview}
+                name={`${user.firstName} ${user.lastName}`}
+                size={96}
+              />
 
               {editando && (
                 <>
@@ -232,6 +236,7 @@ const Profile = () => {
                   type="text"
                   value={nome}
                   onChange={(e) => setNome(e.target.value)}
+                  maxLength={50}
                   className={`border px-3 py-2 rounded-lg font-normal text-base shadow-sm focus:ring-2 focus:ring-purple-300 transition ${
                     erros.nome && "border-red-500"
                   }`}
@@ -247,6 +252,7 @@ const Profile = () => {
                   type="text"
                   value={apelido}
                   onChange={(e) => setApelido(e.target.value)}
+                  maxLength={50}
                   className={`border px-3 py-2 rounded-lg font-normal text-base shadow-sm focus:ring-2 focus:ring-purple-300 transition ${
                     erros.apelido && "border-red-500"
                   }`}

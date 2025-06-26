@@ -101,15 +101,11 @@ export default function PostCard({
     <article className="bg-white border border-gray-400 shadow-sm hover:shadow-md rounded-xl p-6 transition">
       <header className="flex justify-between items-start">
         <div className="flex items-center gap-3">
-          <Avatar
-            url={post.avatar_url}
-            name={post.author?.split(" ")[0]}
-            size={32}
-          />
+          <Avatar url={post.avatar_url} name={post.author} size={32} />
 
           <div className="flex flex-col">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-sm font-semibold text-gray-800">
+              <span className="text-sm font-semibold text-gray-800 truncate max-w-[140px]">
                 @{post.author}
               </span>
               {post.visibility && (

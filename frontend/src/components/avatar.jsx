@@ -18,7 +18,8 @@ export default function Avatar({ url, name, size = 40 }) {
       : `${API}/uploads/${url}`
     : null;
 
-  const bgColor = stringToColor(name || "");
+  const bgColor = stringToColor((name || "").trim().toLowerCase());
+
 
   return src ? (
     <div

@@ -7,9 +7,23 @@ const JWT_SECRET = process.env.JWT_SECRET || "zebify_super_secreto";
 
 export async function signup(req, res) {
   console.log("BODY RECEBIDO:", req.body);
-  const { firstName, lastName, contact, password, gender, birthDate } = req.body;
+  const { firstName, lastName, contact, password, gender, birthDate } =
+    req.body;
 
-  if (!firstName || !lastName || !contact || !password || !gender || !birthDate) {
+  if (firstName.length > 50 || lastName.length > 50) {
+    return res
+      .status(400)
+      .json({ error: "Nome ou apelido excede 50 caracteres." });
+  }
+
+  if (
+    !firstName ||
+    !lastName ||
+    !contact ||
+    !password ||
+    !gender ||
+    !birthDate
+  ) {
     return res.status(400).json({ error: "Todos os campos são obrigatórios" });
   }
 
@@ -37,14 +51,11 @@ export async function signup(req, res) {
   const email = contact.toLowerCase();
 
   try {
-    const existing = await allQuery(
-      `SELECT id FROM users WHERE email = ?`,
-      [email]
-    );
+    const existing = await allQuery(`SELECT id FROM users WHERE email = ?`, [
+      email,
+    ]);
     if (existing.length > 0) {
-      return res
-        .status(409)
-        .json({ error: "Este e-mail já está em uso" });
+      return res.status(409).json({ error: "Este e-mail já está em uso" });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -93,7 +104,9 @@ export async function login(req, res) {
   }
 
   try {
-    const users = await allQuery(`SELECT * FROM users WHERE email = ?`, [contact]);
+    const users = await allQuery(`SELECT * FROM users WHERE email = ?`, [
+      contact,
+    ]);
     const user = users[0];
 
     if (!user) {
@@ -149,7 +162,9 @@ export async function verifyCode(req, res) {
   }
 
   try {
-    const users = await allQuery(`SELECT * FROM users WHERE email = ?`, [contact]);
+    const users = await allQuery(`SELECT * FROM users WHERE email = ?`, [
+      contact,
+    ]);
     const user = users[0];
 
     if (!user) {

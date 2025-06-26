@@ -112,14 +112,11 @@ const Navbar = () => {
                       : ""
                   }`}
                 >
-                  <Avatar
-                    url={user.avatar_url}
-                    name={user.firstName}
-                    size={32}
-                  />
+                  <Avatar url={user.avatar_url} name={`${user.firstName} ${user.lastName}`} size={32} />
+
                 </div>
 
-                <span className="text-sm text-gray-700 whitespace-nowrap font-semibold">
+                <span className="text-sm text-gray-700 font-semibold max-w-[150px] truncate">
                   Olá,{" "}
                   <span className="text-emerald-600">
                     {user.firstName} {user.lastName}

@@ -43,8 +43,18 @@ Esse script:
 Crie um arquivo `.env` dentro da pasta `backend` com as seguintes variáveis:
 
 ```env
-JWT_SECRET=<zebify_super_secreto>
+# Credencial do JWT
+JWT_SECRET=<sua_chave_secreta>
+
+# Porta do servidor
 PORT=3001
+
+# --- Configurações de e-mail (SMTP) ---
+# Conta que enviará os e-mails de verificação
+EMAIL_FROM=<seu_email_smtp>
+
+# Senha de app ou senha SMTP correspondente
+EMAIL_PASS=<sua_senha_de_app_ou_smtp>
 ```
 
 > Esse arquivo **não é versionado** por segurança (`.env` está incluído no `.gitignore`)

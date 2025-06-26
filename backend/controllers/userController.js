@@ -60,6 +60,12 @@ export async function updateProfile(req, res) {
     return res.status(400).json({ error: "Dados inválidos." });
   }
 
+  if (firstName.length > 50 || lastName.length > 50) {
+    return res
+      .status(400)
+      .json({ error: "Nome ou apelido excede 50 caracteres." });
+  }
+
   const [anoStr, mesStr, diaStr] = birthDate.split("-");
   const ano = parseInt(anoStr);
   const mes = parseInt(mesStr);

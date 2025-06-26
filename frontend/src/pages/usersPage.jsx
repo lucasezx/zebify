@@ -132,11 +132,15 @@ const UsersPage = () => {
           if (listaFiltrada.length === 0) {
             return (
               <p className="text-center text-gray-500 mt-6">
-                O utilizador "{search}" não foi encontrado.
-                {search && (
-                  <span className="block mt-2">
-                    Tente pesquisar por outro nome.
-                  </span>
+                {search ? (
+                  <>
+                    O utilizador "{search}" não foi encontrado.
+                    <span className="block mt-2">
+                      Tente pesquisar por outro nome.
+                    </span>
+                  </>
+                ) : (
+                  "Nenhum utilizador disponível no momento."
                 )}
               </p>
             );
@@ -150,14 +154,10 @@ const UsersPage = () => {
                   className="bg-white border border-gray-300 shadow-md rounded-xl p-6 mb-6 transition hover:shadow-lg"
                 >
                   <div className="flex items-center gap-4 mb-4">
-                    <Avatar
-                      url={u.avatar_url}
-                      name={u.name?.split(" ")[0]}
-                      size={40}
-                    />
+                    <Avatar url={u.avatar_url} name={u.name} size={40} />
 
                     <div>
-                      <p className="text-base font-semibold text-gray-800">
+                      <p className="text-base font-semibold text-gray-800 truncate max-w-[160px]">
                         {u.name}
                       </p>
                       <p className="text-sm text-gray-500">{u.email}</p>
