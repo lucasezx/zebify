@@ -44,7 +44,7 @@ export async function getPosts(req, res) {
   try {
     const posts = await allQuery(
       `
-      SELECT p.*, u.first_name || ' ' || u.last_name AS author, u.avatar_url
+      SELECT p.*, u.first_name || ' ' || u.last_name AS author, u.avatar_url, u.id AS authorId
       FROM posts p
       JOIN users u ON u.id = p.user_id
       LEFT JOIN friendships f ON ((f.sender_id = ? AND f.receiver_id = p.user_id) OR (f.receiver_id = ? AND f.sender_id = p.user_id)) AND f.status = 'aceito'
@@ -64,7 +64,7 @@ export async function getMyPosts(req, res) {
   const userId = req.user.id;
   try {
     const posts = await allQuery(
-      `SELECT p.*, u.first_name || ' ' || u.last_name AS author, u.avatar_url
+      `SELECT p.*, u.first_name || ' ' || u.last_name AS author, u.avatar_url, u.id AS authorId
       FROM posts p
       JOIN users u ON u.id = p.user_id
       WHERE p.user_id = ?
@@ -130,7 +130,8 @@ export function updatePost(io) {
     );
 
     const [postAtualizado] = await allQuery(
-      `SELECT p.*, u.first_name || ' ' || u.last_name AS author, u.avatar_url
+      `
+      SELECT p.*, u.first_name || ' ' || u.last_name AS author, u.avatar_url, u.id AS authorId
          FROM posts p
          JOIN users u ON u.id = p.user_id
         WHERE p.id = ?`,
@@ -166,4 +167,38 @@ export function deletePost(io) {
       res.status(500).json({ error: "Erro ao apagar publicação." });
     }
   };
+}
+
+export async function getPostsByUser(req, res) {
+  const viewerId = req.user.id;
+  const userId = req.params.id;
+
+  try {
+    const posts = await allQuery(
+      `
+      SELECT p.*, u.first_name || ' ' || u.last_name AS author, u.avatar_url, u.id AS authorId
+      FROM posts p
+      JOIN users u ON u.id = p.user_id
+      LEFT JOIN friendships f 
+        ON ((f.sender_id = ? AND f.receiver_id = p.user_id) 
+         OR (f.receiver_id = ? AND f.sender_id = p.user_id)) 
+        AND f.status = 'aceito'
+      WHERE p.user_id = ?
+        AND (
+          p.visibility = 'public'
+          OR p.user_id = ?
+          OR (p.visibility = 'friends' AND f.id IS NOT NULL)
+        )
+      ORDER BY p.created_at DESC
+      `,
+      [viewerId, viewerId, userId, viewerId]
+    );
+
+    res.json(posts);
+  } catch (err) {
+    console.error(err);
+    res
+      .status(500)
+      .json({ error: "Erro ao carregar publicações do utilizador." });
+  }
 }

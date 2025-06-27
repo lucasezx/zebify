@@ -31,9 +31,7 @@ const Login = () => {
       }
 
       if (res.ok) {
-        login(data.user);
-        localStorage.setItem("user", JSON.stringify(data.user));
-        localStorage.setItem("token", data.token);
+        login(data.user, data.token);
         navigate("/welcome");
       } else {
         setMensagem(data.error || "Erro ao fazer login.");

@@ -4,38 +4,35 @@ import socket from "../socket";
 import Footer from "../components/footer";
 import Avatar from "../components/avatar";
 import ProfilePictureModal from "../components/profilePictureModal";
+import { Link } from "react-router-dom";
 
 const API = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
 
-const UsersPage = () => {
+export default function UsersPage() {
   const { user } = useAuth();
   const token = localStorage.getItem("token");
 
   const [utilizadores, setUtilizadores] = useState([]);
   const [loadingId, setLoadingId] = useState(null);
   const [page, setPage] = useState(1);
-  const [hasMoreUsers, setHasMoreUsers] = useState(true);
+  const [hasMore, setHasMore] = useState(true);
   const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState("todos"); // 🆕
   const [picModal, setPicModal] = useState({ open: false, url: "", name: "" });
 
-  const carregarUtilizadores = useCallback(
-    async (pagina = 1, termoBusca = "") => {
+  /* carregar utilizadores (igual) ------------------------------------------------------- */
+  const carregar = useCallback(
+    async (pagina = 1, termo = "") => {
       try {
         const res = await fetch(
           `${API}/api/users/with-status?page=${pagina}&limit=10&search=${encodeURIComponent(
-            termoBusca
+            termo
           )}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
-
         const data = await res.json();
-        setHasMoreUsers(data.length === 10);
-
-        if (pagina === 1) {
-          setUtilizadores(data);
-        } else {
-          setUtilizadores((prev) => [...prev, ...data]);
-        }
+        setHasMore(data.length === 10);
+        setUtilizadores(pagina === 1 ? data : (prev) => [...prev, ...data]);
       } catch {
         alert("Erro ao carregar utilizadores");
       }
@@ -43,66 +40,39 @@ const UsersPage = () => {
     [token]
   );
 
+  /* listeners de socket (igual) --------------------------------------------------------- */
   useEffect(() => {
     if (!user) return;
+    const me = user.id;
 
-    setPage(1);
-    carregarUtilizadores(1, search);
-
-    const meuId = user.id;
+    const apply = (checker, newStatus) =>
+      setUtilizadores((prev) =>
+        prev.map((u) => (checker(u) ? { ...u, status: newStatus } : u))
+      );
 
     socket.on("pedido_enviado", ({ senderId, receiverId }) => {
-      setUtilizadores((prev) =>
-        prev.map((u) => {
-          if (u.id === senderId || u.id === receiverId) {
-            if (meuId === senderId && u.id === receiverId) {
-              return { ...u, status: "pendente" };
-            } else if (meuId === receiverId && u.id === senderId) {
-              return { ...u, status: "recebido" };
-            }
-          }
-          return u;
-        })
-      );
+      const sid = Number(senderId),
+        rid = Number(receiverId);
+      apply((u) => me === sid && u.id === rid, "pendente");
+      apply((u) => me === rid && u.id === sid, "recebido");
     });
-
     socket.on("pedido_cancelado", ({ senderId, receiverId }) => {
-      setUtilizadores((prev) =>
-        prev.map((u) => {
-          if (meuId === senderId && u.id === receiverId) {
-            return { ...u, status: "nenhum" };
-          } else if (meuId === receiverId && u.id === senderId) {
-            return { ...u, status: "nenhum" };
-          }
-          return u;
-        })
-      );
+      const sid = Number(senderId),
+        rid = Number(receiverId);
+      apply((u) => me === sid && u.id === rid, "nenhum");
+      apply((u) => me === rid && u.id === sid, "nenhum");
     });
-
     socket.on("amizade_aceita", ({ userId1, userId2 }) => {
-      setUtilizadores((prev) =>
-        prev.map((u) => {
-          if (meuId === userId1 && u.id === userId2) {
-            return { ...u, status: "amigos" };
-          } else if (meuId === userId2 && u.id === userId1) {
-            return { ...u, status: "amigos" };
-          }
-          return u;
-        })
-      );
+      const u1 = Number(userId1),
+        u2 = Number(userId2);
+      apply((u) => me === u1 && u.id === u2, "amigos");
+      apply((u) => me === u2 && u.id === u1, "amigos");
     });
-
     socket.on("amizade_removida", ({ userId1, userId2 }) => {
-      setUtilizadores((prev) =>
-        prev.map((u) => {
-          if (meuId === userId1 && u.id === userId2) {
-            return { ...u, status: "nenhum" };
-          } else if (meuId === userId2 && u.id === userId1) {
-            return { ...u, status: "nenhum" };
-          }
-          return u;
-        })
-      );
+      const u1 = Number(userId1),
+        u2 = Number(userId2);
+      apply((u) => me === u1 && u.id === u2, "nenhum");
+      apply((u) => me === u2 && u.id === u1, "nenhum");
     });
 
     return () => {
@@ -111,16 +81,22 @@ const UsersPage = () => {
       socket.off("amizade_aceita");
       socket.off("amizade_removida");
     };
-  }, [user, carregarUtilizadores, search]);
+  }, [user]);
 
+  /* inicial + pesquisa ------------------------------------------------------------------ */
   useEffect(() => {
-    setPage(1);
-    carregarUtilizadores(1, search);
-  }, [search, carregarUtilizadores]);
+    if (user) {
+      setPage(1);
+      carregar(1, search);
+    }
+  }, [user, search, carregar]);
 
-  const executarAcao = async (url, method = "POST", body = null) => {
+  /* executar ação (igual) --------------------------------------------------------------- */
+  const executar = async (url, method = "POST", body = null) => {
+    const alvoId =
+      body?.receiverId || body?.senderId || Number(url.match(/(\d+)$/)?.[1]);
     try {
-      setLoadingId(body?.receiverId || body?.senderId || null);
+      setLoadingId(alvoId);
       await fetch(url, {
         method,
         headers: {
@@ -134,68 +110,73 @@ const UsersPage = () => {
     }
   };
 
+  /* ---------------------------------- JSX --------------------------------------------- */
   return (
     <div className="min-h-screen flex flex-col bg-gray-100">
       <main className="flex-1 pt-20 px-6 max-w-6xl w-full mx-auto">
         <h1 className="text-2xl font-bold mb-6">Utilizadores</h1>
 
-        <input
-          type="text"
-          placeholder="Pesquisar utilizadores..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="mb-6 px-4 py-2 border border-gray-300 rounded-lg w-full max-w-md"
-        />
+        {/* PESQUISA + FILTRO */}
+        <div className="flex flex-col sm:flex-row gap-4 mb-6">
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Pesquisar utilizadores..."
+            className="px-4 py-2 border border-gray-300 rounded-lg w-full max-w-md"
+          />
+
+          <select
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            className="px-4 py-2 border border-gray-300 rounded-lg w-full sm:w-48"
+          >
+            <option value="todos">Todos</option>
+            <option value="amigos">Amigos</option>
+            <option value="pendente">Pedidos enviados</option>
+            <option value="recebido">Solicitações recebidas</option>
+          </select>
+        </div>
 
         {(() => {
-          const listaFiltrada = utilizadores.filter((u) => u.id !== user?.id);
+          /* aplica filtro escolhido */
+          let lista = utilizadores.filter((u) => u.id !== user?.id);
+          if (filter !== "todos")
+            lista = lista.filter((u) => u.status === filter);
 
-          if (listaFiltrada.length === 0) {
+          if (lista.length === 0) {
             return (
               <p className="text-center text-gray-500 mt-6">
-                {search ? (
-                  <>
-                    O utilizador "{search}" não foi encontrado.
-                    <span className="block mt-2">
-                      Tente pesquisar por outro nome.
-                    </span>
-                  </>
-                ) : (
-                  "Nenhum utilizador disponível no momento."
-                )}
+                Nenhum resultado para esse critério.
               </p>
             );
           }
 
           return (
             <>
-              {listaFiltrada.map((u) => {
+              {lista.map((u) => {
                 const avatarUrl =
-                  !u.avatar_url ||
-                  u.avatar_url === "null" ||
-                  u.avatar_url === "undefined"
+                  !u.avatar_url || ["null", "undefined"].includes(u.avatar_url)
                     ? null
                     : /^(https?:|blob:|data:)/.test(u.avatar_url)
                     ? u.avatar_url
                     : `${API}/uploads/${u.avatar_url}`;
-
-                const temFoto = Boolean(avatarUrl);
 
                 return (
                   <div
                     key={u.id}
                     className="bg-white border border-gray-300 shadow-md rounded-xl p-6 mb-6 transition hover:shadow-lg"
                   >
+                    {/* cabeçalho da card */}
                     <div className="flex items-center gap-4 mb-4">
                       <Avatar
                         url={avatarUrl}
                         name={u.name}
                         size={40}
                         className={
-                          temFoto ? "cursor-pointer" : "cursor-default"
+                          avatarUrl ? "cursor-pointer" : "cursor-default"
                         }
                         onClick={
-                          temFoto
+                          avatarUrl
                             ? () =>
                                 setPicModal({
                                   open: true,
@@ -205,14 +186,15 @@ const UsersPage = () => {
                             : undefined
                         }
                       />
-
                       <div>
-                        <p className="text-base font-semibold text-gray-800 truncate max-w-[160px]">
+                        <Link
+                          to={`/users/${u.id}`}
+                          className="text-base font-semibold hover:underline truncate max-w-[160px]"
+                        >
                           {u.name}
-                        </p>
+                        </Link>
                         <p className="text-sm text-gray-500">{u.email}</p>
                       </div>
-
                       <span
                         className={`ml-auto px-3 py-1 rounded-full text-xs font-semibold text-white capitalize ${
                           u.status === "amigos"
@@ -228,73 +210,67 @@ const UsersPage = () => {
                       </span>
                     </div>
 
+                    {/* botões (inalterados) */}
                     <div className="flex flex-wrap gap-3 mt-2">
                       {u.status === "amigos" && (
                         <button
-                          onClick={() =>
-                            executarAcao(`${API}/api/friends/${u.id}`, "DELETE")
-                          }
                           disabled={loadingId === u.id}
+                          onClick={() =>
+                            executar(`${API}/api/friends/${u.id}`, "DELETE")
+                          }
                           className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition"
                         >
                           Remover amigo
                         </button>
                       )}
-
                       {u.status === "pendente" && (
                         <button
+                          disabled={loadingId === u.id}
                           onClick={() =>
-                            executarAcao(
+                            executar(
                               `${API}/api/friends/request/${u.id}`,
                               "DELETE"
                             )
                           }
-                          disabled={loadingId === u.id}
                           className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg text-sm transition"
                         >
                           Cancelar pedido
                         </button>
                       )}
-
                       {u.status === "recebido" && (
                         <>
                           <button
-                            onClick={() =>
-                              executarAcao(
-                                `${API}/api/friends/accept`,
-                                "POST",
-                                { senderId: u.id }
-                              )
-                            }
                             disabled={loadingId === u.id}
+                            onClick={() =>
+                              executar(`${API}/api/friends/accept`, "POST", {
+                                senderId: u.id,
+                              })
+                            }
                             className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition"
                           >
                             Aceitar
                           </button>
                           <button
-                            onClick={() =>
-                              executarAcao(
-                                `${API}/api/friends/reject`,
-                                "POST",
-                                { senderId: u.id }
-                              )
-                            }
                             disabled={loadingId === u.id}
+                            onClick={() =>
+                              executar(`${API}/api/friends/reject`, "POST", {
+                                senderId: u.id,
+                              })
+                            }
                             className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition"
                           >
                             Recusar
                           </button>
                         </>
                       )}
-
                       {u.status === "nenhum" && (
                         <button
+                          disabled={loadingId === u.id}
                           onClick={() =>
-                            executarAcao(`${API}/api/friends/request`, "POST", {
+                            executar(`${API}/api/friends/request`, "POST", {
                               receiverId: u.id,
                             })
                           }
-                          disabled={loadingId === u.id}
                           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition"
                         >
                           Adicionar amigo
@@ -305,13 +281,14 @@ const UsersPage = () => {
                 );
               })}
 
-              {hasMoreUsers && listaFiltrada.length >= 10 && (
+              {/* paginação simples */}
+              {hasMore && lista.length >= 10 && (
                 <div className="flex justify-center mt-4">
                   <button
                     onClick={() => {
-                      const nextPage = page + 1;
-                      setPage(nextPage);
-                      carregarUtilizadores(nextPage, search);
+                      const next = page + 1;
+                      setPage(next);
+                      carregar(next, search);
                     }}
                     className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-4 rounded"
                   >
@@ -334,6 +311,4 @@ const UsersPage = () => {
       <Footer />
     </div>
   );
-};
-
-export default UsersPage;
+}

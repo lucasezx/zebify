@@ -10,6 +10,7 @@ import PrivateRoute from "./components/privateRoute";
 import UsersPage from "./pages/usersPage";
 import NewPostPage from "./pages/newPostPage";
 import Verificar from "./pages/verificar";
+import UserProfile from "./pages/userProfile";
 
 function App() {
   return (
@@ -50,6 +51,15 @@ function App() {
           element={
             <PrivateRoute>
               <UsersPage />
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/users/:id"
+          element={
+            <PrivateRoute>
+              <UserProfile />
             </PrivateRoute>
           }
         />

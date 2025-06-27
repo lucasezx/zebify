@@ -6,6 +6,7 @@ import PostCard from "../components/postCard";
 import { getDaysInMonth } from "../../../backend/utils/date";
 import Avatar from "../components/avatar";
 import ProfilePictureModal from "../components/profilePictureModal";
+import socket from "../socket";
 
 const API = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
 
@@ -46,14 +47,14 @@ const Profile = () => {
   const [picModal, setPicModal] = useState({ open: false, url: "" });
 
   useEffect(() => {
-    if (user?.birth_date) {
+    if (!editando && user?.birth_date) {
       const [anoNasc, mesNasc, diaNasc] = user.birth_date.split("-");
       setAno(anoNasc);
       setMes(mesNasc);
       setDia(diaNasc);
       setIdade(calcularIdade(user.birth_date));
     }
-  }, [user]);
+  }, [user?.birth_date, editando]);
 
   useEffect(() => {
     setAvatarPreview(user?.avatar_url || null);
@@ -106,6 +107,28 @@ const Profile = () => {
     return Object.keys(novoErros).length === 0;
   };
 
+  const restaurarDadosOriginais = () => {
+    setNome(user.firstName || "");
+    setApelido(user.lastName || "");
+    if (user.birth_date) {
+      const [anoNasc, mesNasc, diaNasc] = user.birth_date.split("-");
+      setAno(anoNasc);
+      setMes(mesNasc);
+      setDia(diaNasc);
+      setIdade(calcularIdade(user.birth_date));
+    } else {
+      setAno("");
+      setMes("");
+      setDia("");
+      setIdade("");
+    }
+    setAvatarPreview(user.avatar_url || null);
+    setAvatarFile(null);
+    setAvatarRemoved(false);
+    setErros({});
+    setMensagem("");
+  };
+
   const salvarAlteracoes = async () => {
     if (!validar()) return;
     try {
@@ -148,7 +171,16 @@ const Profile = () => {
           headers: { Authorization: `Bearer ${token}` },
           body: fd,
         });
-        if (up.ok) userAtualizado = await up.json();
+        if (up.ok) {
+          const data = await up.json();
+          userAtualizado = data.user ?? data;
+          if (data.token) {
+            localStorage.setItem("token", data.token);
+            login(userAtualizado, data.token);
+          } else {
+            login(userAtualizado);
+          }
+        }
       }
 
       if (avatarRemoved && !avatarFile) {
@@ -156,10 +188,20 @@ const Profile = () => {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },
         });
-        if (del.ok) userAtualizado = await del.json();
+        if (del.ok) {
+          const data = await del.json();
+          userAtualizado = data.user ?? data;
+          if (data.token) {
+            localStorage.setItem("token", data.token);
+            login(userAtualizado, data.token);
+          } else {
+            login(userAtualizado);
+          }
+        }
       }
 
-      login(userAtualizado);
+      login(userAtualizado, token);
+      socket.emit("profileUpdated", userAtualizado?.id ?? user.id);
       setEditando(false);
       setMensagem("Perfil atualizado com sucesso.");
       setAvatarRemoved(false);
@@ -173,8 +215,8 @@ const Profile = () => {
 
   const showAvatarUrl = avatarPreview
     ? /^(https?:|blob:|data:)/.test(avatarPreview)
-      ? avatarPreview 
-      : `${API}/uploads/${avatarPreview}` 
+      ? avatarPreview
+      : `${API}/uploads/${avatarPreview}`
     : null;
 
   return (
@@ -393,7 +435,10 @@ const Profile = () => {
                   Salvar
                 </button>
                 <button
-                  onClick={() => setEditando(false)}
+                  onClick={() => {
+                    restaurarDadosOriginais();
+                    setEditando(false);
+                  }}
                   className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg shadow border border-red-700/30 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-red-400"
                 >
                   <svg

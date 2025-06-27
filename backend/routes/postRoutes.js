@@ -4,6 +4,7 @@ import {
   getMyPosts,
   updatePost,
   deletePost,
+  getPostsByUser,
 } from "../controllers/postController.js";
 
 export default function registerPostRoutes(app, authenticateToken, upload, io) {
@@ -17,4 +18,5 @@ export default function registerPostRoutes(app, authenticateToken, upload, io) {
   app.get("/api/my-posts", authenticateToken, getMyPosts);
   app.put("/api/posts/:id", authenticateToken, updatePost(io));
   app.delete("/api/posts/:id", authenticateToken, deletePost(io));
+  app.get("/api/users/:id/posts", authenticateToken, getPostsByUser);
 }

@@ -4,6 +4,7 @@ import { updatePost, deletePost } from "../services/posts";
 import socket from "../socket";
 import Avatar from "./avatar";
 import ProfilePictureModal from "./profilePictureModal";
+import { Link } from "react-router-dom";
 
 const API = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
 const LIMITE = 200;
@@ -128,9 +129,28 @@ export default function PostCard({
 
           <div className="flex flex-col">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-sm font-semibold text-gray-800 truncate max-w-[140px]">
-                @{post.author}
-              </span>
+              {post.authorId ? (
+                user?.id === post.authorId ? (
+                  <Link
+                    to="/profile"
+                    className="text-sm font-semibold text-green-700 truncate max-w-[140px] hover:underline"
+                  >
+                    @{post.author}
+                  </Link>
+                ) : (
+                  <Link
+                    to={`/users/${post.authorId}`}
+                    className="text-sm font-semibold text-green-700 truncate max-w-[140px] hover:underline"
+                  >
+                    @{post.author}
+                  </Link>
+                )
+              ) : (
+                <span className="text-sm font-semibold text-gray-800 truncate max-w-[140px]">
+                  @{post.author}
+                </span>
+              )}
+
               {!!post.visibility && (
                 <span className="text-xs text-blue-600">
                   {visibilityIcons[post.visibility]}
