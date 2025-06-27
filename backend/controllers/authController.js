@@ -6,7 +6,6 @@ import { sendVerificationEmail } from "../utils/email.js";
 const JWT_SECRET = process.env.JWT_SECRET || "zebify_super_secreto";
 
 export async function signup(req, res) {
-  console.log("BODY RECEBIDO:", req.body);
   const { firstName, lastName, contact, password, gender, birthDate } =
     req.body;
 

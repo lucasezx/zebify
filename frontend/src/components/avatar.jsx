@@ -1,7 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
 const API = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
 
-// Gera uma cor HSL baseada no nome
 function stringToColor(str) {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
@@ -11,33 +10,49 @@ function stringToColor(str) {
   return `hsl(${hue}, 70%, 60%)`;
 }
 
-export default function Avatar({ url, name, size = 40 }) {
-  const src = url
-    ? /^(https?:|blob:|data:)/.test(url)
-      ? url
-      : `${API}/uploads/${url}`
-    : null;
+export default function Avatar({
+  url,
+  name,
+  size = 40,
+  className = "",
+  ...rest
+}) {
+  const [imgError, setImgError] = useState(false);
+
+  const src =
+    url && !imgError
+      ? /^(https?:|blob:|data:)/.test(url)
+        ? url
+        : `${API}/uploads/${url}`
+      : null;
 
   const bgColor = stringToColor((name || "").trim().toLowerCase());
 
-
-  return src ? (
+  return (
     <div
-      className="rounded-full overflow-hidden border shadow"
-      style={{ width: size, height: size }}
-    >
-      <img src={src} alt={name} className="w-full h-full object-cover" />
-    </div>
-  ) : (
-    <div
-      className="text-white rounded-full flex items-center justify-center font-bold border shadow"
+      className={`rounded-full overflow-hidden border shadow flex items-center justify-center ${className}`}
       style={{
         width: size,
         height: size,
-        backgroundColor: bgColor,
+        backgroundColor: !src ? bgColor : undefined,
       }}
+      {...rest}
     >
-      {name?.charAt(0)?.toUpperCase() || "?"}
+      {src ? (
+        <img
+          src={src}
+          alt={name}
+          className="w-full h-full object-cover"
+          onError={() => setImgError(true)}
+        />
+      ) : (
+        <span
+          className="text-white font-bold leading-none select-none"
+          style={{ fontSize: size * 0.45 }}
+        >
+          {name?.charAt(0)?.toUpperCase() || "?"}
+        </span>
+      )}
     </div>
   );
 }

@@ -3,8 +3,10 @@ import CommentBox from "./commentBox";
 import { updatePost, deletePost } from "../services/posts";
 import socket from "../socket";
 import Avatar from "./avatar";
+import ProfilePictureModal from "./profilePictureModal";
 
 const API = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
+const LIMITE = 200;
 
 export default function PostCard({
   post,
@@ -19,16 +21,14 @@ export default function PostCard({
   const [visMenuOpen, setVisMenuOpen] = useState(false);
   const [msg, setMsg] = useState("");
   const [verMais, setVerMais] = useState(false);
+  const [picModal, setPicModal] = useState({ open: false, url: "", name: "" });
 
-  const menuRef = useRef();
+  const menuRef = useRef(null);
   const user = JSON.parse(localStorage.getItem("user"));
 
-  const LIMITE = 200;
-  const textoCurto = post.conteudo?.length > LIMITE && !verMais;
-
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
         setMenuOpen(false);
         setVisMenuOpen(false);
       }
@@ -37,34 +37,42 @@ export default function PostCard({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    setConteudo(post.conteudo ?? "");
+    setLegenda(post.legenda ?? "");
+  }, [post.conteudo, post.legenda]);
+
   const visibilityIcons = {
     public: "🌍 Público",
     friends: "👥 Amigos",
     private: "🔒 Apenas eu",
   };
 
-  const formatarData = (data) => {
-    const dt = new Date(data);
-    return dt.toLocaleString("pt-PT", {
+  const formatarData = (data) =>
+    new Date(data).toLocaleString("pt-PT", {
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
       hour: "2-digit",
       minute: "2-digit",
     });
-  };
+
+  const textoCurto = post.conteudo?.length > LIMITE && !verMais;
+
+  const avatarUrl =
+    !post.avatar_url ||
+    post.avatar_url === "null" ||
+    post.avatar_url === "undefined"
+      ? null
+      : /^(https?:|blob:|data:)/.test(post.avatar_url)
+      ? post.avatar_url
+      : `${API}/uploads/${post.avatar_url}`;
 
   const salvar = async () => {
     try {
-      const conteudoOriginal = post.conteudo ?? "";
-      const conteudoNovo = conteudo ?? "";
-
-      const foiEditado = conteudoOriginal.trim() !== conteudoNovo.trim();
-
       await updatePost(post.id, { conteudo, legenda });
       setEditing(false);
       setMsg("");
-
       onChange?.();
     } catch (e) {
       setMsg(e.message);
@@ -101,14 +109,29 @@ export default function PostCard({
     <article className="bg-white border border-gray-400 shadow-sm hover:shadow-md rounded-xl p-6 transition">
       <header className="flex justify-between items-start">
         <div className="flex items-center gap-3">
-          <Avatar url={post.avatar_url} name={post.author} size={32} />
+          <Avatar
+            url={avatarUrl}
+            name={post.author}
+            size={32}
+            className={avatarUrl ? "cursor-pointer" : "cursor-default"}
+            onClick={
+              avatarUrl
+                ? () =>
+                    setPicModal({
+                      open: true,
+                      url: avatarUrl,
+                      name: post.author,
+                    })
+                : undefined
+            }
+          />
 
           <div className="flex flex-col">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-sm font-semibold text-gray-800 truncate max-w-[140px]">
                 @{post.author}
               </span>
-              {post.visibility && (
+              {!!post.visibility && (
                 <span className="text-xs text-blue-600">
                   {visibilityIcons[post.visibility]}
                 </span>
@@ -117,9 +140,7 @@ export default function PostCard({
 
             <span className="text-xs text-gray-400">
               {formatarData(post.created_at)}
-              {post.editado === 1 && (
-                <span className="text-gray-400 italic"> (editado)</span>
-              )}
+              {post.editado === 1 && <span className="italic"> (editado)</span>}
             </span>
           </div>
         </div>
@@ -127,16 +148,17 @@ export default function PostCard({
         {isOwner && post.user_id === user?.id && (
           <div className="relative" ref={menuRef}>
             <button
-              onClick={() => setMenuOpen((prev) => !prev)}
+              onClick={() => setMenuOpen((p) => !p)}
               className="text-xl font-bold text-gray-600 hover:text-black"
             >
               ⋯
             </button>
+
             {menuOpen && (
-              <div className="absolute right-0 mt-2 w-44 bg-white border rounded-md shadow-lg z-50">
+              <div className="absolute right-0 mt-2 w-48 bg-white border rounded-md shadow-lg z-50 text-sm">
                 <button
-                  onClick={() => setVisMenuOpen(!visMenuOpen)}
-                  className="block w-full px-4 py-2 text-left text-sm hover:bg-gray-100"
+                  onClick={() => setVisMenuOpen((p) => !p)}
+                  className="w-full px-4 py-2 text-left hover:bg-gray-100"
                 >
                   {visibilityIcons[post.visibility]} ▼
                 </button>
@@ -146,7 +168,7 @@ export default function PostCard({
                       <div
                         key={key}
                         onClick={() => atualizarVisibilidade(key)}
-                        className={`px-4 py-2 text-sm cursor-pointer hover:bg-gray-100 ${
+                        className={`px-4 py-2 cursor-pointer hover:bg-gray-100 ${
                           post.visibility === key
                             ? "font-semibold text-emerald-600"
                             : ""
@@ -159,13 +181,13 @@ export default function PostCard({
                 )}
                 <button
                   onClick={() => setEditing(true)}
-                  className="block w-full px-4 py-2 text-left text-sm hover:bg-gray-100"
+                  className="w-full px-4 py-2 text-left hover:bg-gray-100"
                 >
                   ✏️ Editar publicação
                 </button>
                 <button
                   onClick={apagar}
-                  className="block w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50"
+                  className="w-full px-4 py-2 text-left text-red-600 hover:bg-red-50"
                 >
                   🗑️ Apagar
                 </button>
@@ -235,7 +257,7 @@ export default function PostCard({
               {post.conteudo.length > LIMITE && (
                 <button
                   className="ml-1 text-emerald-600 text-sm hover:underline"
-                  onClick={() => setVerMais(!verMais)}
+                  onClick={() => setVerMais((v) => !v)}
                 >
                   {verMais ? "ver menos" : "ver mais"}
                 </button>
@@ -243,7 +265,7 @@ export default function PostCard({
             </p>
           )}
 
-          {post.legenda && (
+          {!!post.legenda && (
             <p className="text-sm text-gray-500 italic">{post.legenda}</p>
           )}
         </div>
@@ -257,6 +279,13 @@ export default function PostCard({
           <CommentBox postId={post.id} />
         </section>
       )}
+
+      <ProfilePictureModal
+        isOpen={picModal.open}
+        onClose={() => setPicModal({ ...picModal, open: false })}
+        imageUrl={picModal.url}
+        userName={picModal.name}
+      />
     </article>
   );
 }

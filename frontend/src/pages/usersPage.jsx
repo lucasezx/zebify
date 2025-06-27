@@ -3,6 +3,7 @@ import { useAuth } from "../context/authContext";
 import socket from "../socket";
 import Footer from "../components/footer";
 import Avatar from "../components/avatar";
+import ProfilePictureModal from "../components/profilePictureModal";
 
 const API = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
 
@@ -15,6 +16,7 @@ const UsersPage = () => {
   const [page, setPage] = useState(1);
   const [hasMoreUsers, setHasMoreUsers] = useState(true);
   const [search, setSearch] = useState("");
+  const [picModal, setPicModal] = useState({ open: false, url: "", name: "" });
 
   const carregarUtilizadores = useCallback(
     async (pagina = 1, termoBusca = "") => {
@@ -23,9 +25,7 @@ const UsersPage = () => {
           `${API}/api/users/with-status?page=${pagina}&limit=10&search=${encodeURIComponent(
             termoBusca
           )}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
+          { headers: { Authorization: `Bearer ${token}` } }
         );
 
         const data = await res.json();
@@ -36,7 +36,7 @@ const UsersPage = () => {
         } else {
           setUtilizadores((prev) => [...prev, ...data]);
         }
-      } catch (err) {
+      } catch {
         alert("Erro ao carregar utilizadores");
       }
     },
@@ -44,41 +44,66 @@ const UsersPage = () => {
   );
 
   useEffect(() => {
-    if (user) {
-      setPage(1);
-      carregarUtilizadores(1, search);
+    if (!user) return;
 
-      const meuId = user.id;
+    setPage(1);
+    carregarUtilizadores(1, search);
 
-      const atualizar = () => {
-        setPage(1);
-        carregarUtilizadores(1, search);
-      };
+    const meuId = user.id;
 
-      socket.on("pedido_enviado", ({ senderId, receiverId }) => {
-        if (meuId === senderId || meuId === receiverId) {
-          atualizar();
-        }
-      });
+    socket.on("pedido_enviado", ({ senderId, receiverId }) => {
+      setUtilizadores((prev) =>
+        prev.map((u) => {
+          if (u.id === senderId || u.id === receiverId) {
+            if (meuId === senderId && u.id === receiverId) {
+              return { ...u, status: "pendente" };
+            } else if (meuId === receiverId && u.id === senderId) {
+              return { ...u, status: "recebido" };
+            }
+          }
+          return u;
+        })
+      );
+    });
 
-      socket.on("pedido_cancelado", ({ senderId, receiverId }) => {
-        if (meuId === senderId || meuId === receiverId) {
-          atualizar();
-        }
-      });
+    socket.on("pedido_cancelado", ({ senderId, receiverId }) => {
+      setUtilizadores((prev) =>
+        prev.map((u) => {
+          if (meuId === senderId && u.id === receiverId) {
+            return { ...u, status: "nenhum" };
+          } else if (meuId === receiverId && u.id === senderId) {
+            return { ...u, status: "nenhum" };
+          }
+          return u;
+        })
+      );
+    });
 
-      socket.on("amizade_aceita", ({ userId1, userId2 }) => {
-        if (meuId === userId1 || meuId === userId2) {
-          atualizar();
-        }
-      });
+    socket.on("amizade_aceita", ({ userId1, userId2 }) => {
+      setUtilizadores((prev) =>
+        prev.map((u) => {
+          if (meuId === userId1 && u.id === userId2) {
+            return { ...u, status: "amigos" };
+          } else if (meuId === userId2 && u.id === userId1) {
+            return { ...u, status: "amigos" };
+          }
+          return u;
+        })
+      );
+    });
 
-      socket.on("amizade_removida", ({ userId1, userId2 }) => {
-        if (meuId === userId1 || meuId === userId2) {
-          atualizar();
-        }
-      });
-    }
+    socket.on("amizade_removida", ({ userId1, userId2 }) => {
+      setUtilizadores((prev) =>
+        prev.map((u) => {
+          if (meuId === userId1 && u.id === userId2) {
+            return { ...u, status: "nenhum" };
+          } else if (meuId === userId2 && u.id === userId1) {
+            return { ...u, status: "nenhum" };
+          }
+          return u;
+        })
+      );
+    });
 
     return () => {
       socket.off("pedido_enviado");
@@ -96,7 +121,6 @@ const UsersPage = () => {
   const executarAcao = async (url, method = "POST", body = null) => {
     try {
       setLoadingId(body?.receiverId || body?.senderId || null);
-
       await fetch(url, {
         method,
         headers: {
@@ -105,9 +129,6 @@ const UsersPage = () => {
         },
         body: body ? JSON.stringify(body) : undefined,
       });
-
-      setPage(1);
-      carregarUtilizadores(1, search);
     } finally {
       setLoadingId(null);
     }
@@ -148,106 +169,141 @@ const UsersPage = () => {
 
           return (
             <>
-              {listaFiltrada.map((u) => (
-                <div
-                  key={u.id}
-                  className="bg-white border border-gray-300 shadow-md rounded-xl p-6 mb-6 transition hover:shadow-lg"
-                >
-                  <div className="flex items-center gap-4 mb-4">
-                    <Avatar url={u.avatar_url} name={u.name} size={40} />
+              {listaFiltrada.map((u) => {
+                const avatarUrl =
+                  !u.avatar_url ||
+                  u.avatar_url === "null" ||
+                  u.avatar_url === "undefined"
+                    ? null
+                    : /^(https?:|blob:|data:)/.test(u.avatar_url)
+                    ? u.avatar_url
+                    : `${API}/uploads/${u.avatar_url}`;
 
-                    <div>
-                      <p className="text-base font-semibold text-gray-800 truncate max-w-[160px]">
-                        {u.name}
-                      </p>
-                      <p className="text-sm text-gray-500">{u.email}</p>
+                const temFoto = Boolean(avatarUrl);
+
+                return (
+                  <div
+                    key={u.id}
+                    className="bg-white border border-gray-300 shadow-md rounded-xl p-6 mb-6 transition hover:shadow-lg"
+                  >
+                    <div className="flex items-center gap-4 mb-4">
+                      <Avatar
+                        url={avatarUrl}
+                        name={u.name}
+                        size={40}
+                        className={
+                          temFoto ? "cursor-pointer" : "cursor-default"
+                        }
+                        onClick={
+                          temFoto
+                            ? () =>
+                                setPicModal({
+                                  open: true,
+                                  url: avatarUrl,
+                                  name: u.name,
+                                })
+                            : undefined
+                        }
+                      />
+
+                      <div>
+                        <p className="text-base font-semibold text-gray-800 truncate max-w-[160px]">
+                          {u.name}
+                        </p>
+                        <p className="text-sm text-gray-500">{u.email}</p>
+                      </div>
+
+                      <span
+                        className={`ml-auto px-3 py-1 rounded-full text-xs font-semibold text-white capitalize ${
+                          u.status === "amigos"
+                            ? "bg-green-600"
+                            : u.status === "pendente"
+                            ? "bg-yellow-500"
+                            : u.status === "recebido"
+                            ? "bg-blue-500"
+                            : "bg-gray-400"
+                        }`}
+                      >
+                        {u.status}
+                      </span>
                     </div>
-                    <span
-                      className={`ml-auto px-3 py-1 rounded-full text-xs font-semibold text-white capitalize ${
-                        u.status === "amigos"
-                          ? "bg-green-600"
-                          : u.status === "pendente"
-                          ? "bg-yellow-500"
-                          : u.status === "recebido"
-                          ? "bg-blue-500"
-                          : "bg-gray-400"
-                      }`}
-                    >
-                      {u.status}
-                    </span>
-                  </div>
 
-                  <div className="flex flex-wrap gap-3 mt-2">
-                    {u.status === "amigos" && (
-                      <button
-                        onClick={() =>
-                          executarAcao(`${API}/api/friends/${u.id}`, "DELETE")
-                        }
-                        disabled={loadingId === u.id}
-                        className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition"
-                      >
-                        Remover amigo
-                      </button>
-                    )}
-
-                    {u.status === "pendente" && (
-                      <button
-                        onClick={() =>
-                          executarAcao(
-                            `${API}/api/friends/request/${u.id}`,
-                            "DELETE"
-                          )
-                        }
-                        disabled={loadingId === u.id}
-                        className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg text-sm transition"
-                      >
-                        Cancelar pedido
-                      </button>
-                    )}
-
-                    {u.status === "recebido" && (
-                      <>
+                    <div className="flex flex-wrap gap-3 mt-2">
+                      {u.status === "amigos" && (
                         <button
                           onClick={() =>
-                            executarAcao(`${API}/api/friends/accept`, "POST", {
-                              senderId: u.id,
-                            })
-                          }
-                          disabled={loadingId === u.id}
-                          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition"
-                        >
-                          Aceitar
-                        </button>
-                        <button
-                          onClick={() =>
-                            executarAcao(`${API}/api/friends/reject`, "POST", {
-                              senderId: u.id,
-                            })
+                            executarAcao(`${API}/api/friends/${u.id}`, "DELETE")
                           }
                           disabled={loadingId === u.id}
                           className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition"
                         >
-                          Recusar
+                          Remover amigo
                         </button>
-                      </>
-                    )}
+                      )}
 
-                    {u.status === "nenhum" && (
-                      <button
-                        onClick={() =>
-                          executarAcao(`${API}/api/friends/request`, "POST", {
-                            receiverId: u.id,
-                          })
-                        }
-                        disabled={loadingId === u.id}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition"
-                      >
-                        Adicionar amigo
-                      </button>
-                    )}
+                      {u.status === "pendente" && (
+                        <button
+                          onClick={() =>
+                            executarAcao(
+                              `${API}/api/friends/request/${u.id}`,
+                              "DELETE"
+                            )
+                          }
+                          disabled={loadingId === u.id}
+                          className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg text-sm transition"
+                        >
+                          Cancelar pedido
+                        </button>
+                      )}
+
+                      {u.status === "recebido" && (
+                        <>
+                          <button
+                            onClick={() =>
+                              executarAcao(
+                                `${API}/api/friends/accept`,
+                                "POST",
+                                { senderId: u.id }
+                              )
+                            }
+                            disabled={loadingId === u.id}
+                            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition"
+                          >
+                            Aceitar
+                          </button>
+                          <button
+                            onClick={() =>
+                              executarAcao(
+                                `${API}/api/friends/reject`,
+                                "POST",
+                                { senderId: u.id }
+                              )
+                            }
+                            disabled={loadingId === u.id}
+                            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition"
+                          >
+                            Recusar
+                          </button>
+                        </>
+                      )}
+
+                      {u.status === "nenhum" && (
+                        <button
+                          onClick={() =>
+                            executarAcao(`${API}/api/friends/request`, "POST", {
+                              receiverId: u.id,
+                            })
+                          }
+                          disabled={loadingId === u.id}
+                          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition"
+                        >
+                          Adicionar amigo
+                        </button>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
 
               {hasMoreUsers && listaFiltrada.length >= 10 && (
                 <div className="flex justify-center mt-4">
@@ -266,6 +322,13 @@ const UsersPage = () => {
             </>
           );
         })()}
+
+        <ProfilePictureModal
+          isOpen={picModal.open}
+          onClose={() => setPicModal({ ...picModal, open: false })}
+          imageUrl={picModal.url}
+          userName={picModal.name}
+        />
       </main>
 
       <Footer />

@@ -5,6 +5,7 @@ import Footer from "../components/footer";
 import PostCard from "../components/postCard";
 import { getDaysInMonth } from "../../../backend/utils/date";
 import Avatar from "../components/avatar";
+import ProfilePictureModal from "../components/profilePictureModal";
 
 const API = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
 
@@ -42,6 +43,7 @@ const Profile = () => {
   const [avatarPreview, setAvatarPreview] = useState(user?.avatar_url || null);
   const [avatarFile, setAvatarFile] = useState(null);
   const [avatarRemoved, setAvatarRemoved] = useState(false);
+  const [picModal, setPicModal] = useState({ open: false, url: "" });
 
   useEffect(() => {
     if (user?.birth_date) {
@@ -169,6 +171,12 @@ const Profile = () => {
 
   if (!user) return <Navigate to="/login" />;
 
+  const showAvatarUrl = avatarPreview
+    ? /^(https?:|blob:|data:)/.test(avatarPreview)
+      ? avatarPreview 
+      : `${API}/uploads/${avatarPreview}` 
+    : null;
+
   return (
     <div className="min-h-screen flex flex-col bg-gray-100">
       <main className="flex-1 pt-24 px-4 max-w-3xl w-full mx-auto">
@@ -176,9 +184,19 @@ const Profile = () => {
           <div className="absolute top-6 right-6 z-10">
             <div className="relative group w-24 h-24">
               <Avatar
-                url={avatarPreview}
+                url={showAvatarUrl}
                 name={`${user.firstName} ${user.lastName}`}
                 size={96}
+                className={
+                  !editando && showAvatarUrl
+                    ? "cursor-pointer"
+                    : "cursor-default"
+                }
+                onClick={
+                  !editando && showAvatarUrl
+                    ? () => setPicModal({ open: true, url: showAvatarUrl })
+                    : undefined
+                }
               />
 
               {editando && (
@@ -443,6 +461,12 @@ const Profile = () => {
           ))}
         </div>
       </main>
+      <ProfilePictureModal
+        isOpen={picModal.open}
+        onClose={() => setPicModal({ ...picModal, open: false })}
+        imageUrl={picModal.url}
+        hideName={true}
+      />
       <Footer />
     </div>
   );
