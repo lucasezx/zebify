@@ -37,6 +37,7 @@ export default function FilterSelect({ value, onChange }) {
         </ListboxButton>
 
         <ListboxOptions
+          modal={false}
           className="absolute z-10 mt-1 w-full space-y-1 rounded-xl
                      border border-gray-200 bg-white p-2 shadow-lg"
         >
@@ -45,11 +46,11 @@ export default function FilterSelect({ value, onChange }) {
               key={o.id}
               value={o.id}
               as="div"
-              onMouseUp={() => onChange(o.id)} // só dispara ao soltar
-              className={({ active, selected }) =>
+              onMouseUp={() => onChange(o.id)}
+              className={({ focus, selected }) =>
                 [
                   "cursor-pointer select-none rounded-lg px-4 py-2 text-sm",
-                  active && "bg-blue-50 text-blue-700",
+                  focus && "ring-2 ring-blue-500",
                   selected && "font-semibold",
                 ]
                   .filter(Boolean)
