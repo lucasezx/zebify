@@ -23,7 +23,7 @@ export default function Avatar({
     url && !imgError
       ? /^(https?:|blob:|data:)/.test(url)
         ? url
-        : `${API}/uploads/${url}`
+        : `${API}/uploads/${url}?v=${Date.now()}`
       : null;
 
   const bgColor = stringToColor((name || "").trim().toLowerCase());

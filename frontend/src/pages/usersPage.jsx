@@ -5,6 +5,7 @@ import Footer from "../components/footer";
 import Avatar from "../components/avatar";
 import ProfilePictureModal from "../components/profilePictureModal";
 import { Link } from "react-router-dom";
+import FilterSelect from "../components/filterSelect";
 
 const API = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
 
@@ -20,7 +21,6 @@ export default function UsersPage() {
   const [filter, setFilter] = useState("todos"); // 🆕
   const [picModal, setPicModal] = useState({ open: false, url: "", name: "" });
 
-  /* carregar utilizadores (igual) ------------------------------------------------------- */
   const carregar = useCallback(
     async (pagina = 1, termo = "") => {
       try {
@@ -40,7 +40,6 @@ export default function UsersPage() {
     [token]
   );
 
-  /* listeners de socket (igual) --------------------------------------------------------- */
   useEffect(() => {
     if (!user) return;
     const me = user.id;
@@ -83,7 +82,6 @@ export default function UsersPage() {
     };
   }, [user]);
 
-  /* inicial + pesquisa ------------------------------------------------------------------ */
   useEffect(() => {
     if (user) {
       setPage(1);
@@ -91,7 +89,51 @@ export default function UsersPage() {
     }
   }, [user, search, carregar]);
 
-  /* executar ação (igual) --------------------------------------------------------------- */
+  const normalizar = (u) => {
+    const first = u.firstName ?? u.first_name ?? "";
+    const last = u.lastName ?? u.last_name ?? "";
+    return {
+      ...u,
+      name: [first, last].filter(Boolean).join(" "),
+    };
+  };
+
+  useEffect(() => {
+    const onProfileUpdated = (payload) => {
+      const uid =
+        typeof payload === "object" && payload !== null ? payload.id : payload;
+      if (!uid) return;
+
+      setUtilizadores((prev) =>
+        prev.map((u) =>
+          u.id === Number(uid)
+            ? typeof payload === "object"
+              ? normalizar({ ...u, ...payload })
+              : normalizar(u)
+            : u
+        )
+      );
+
+      if (typeof payload !== "object") {
+        fetch(`${API}/api/users/${uid}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+          .then((r) => r.json())
+          .then((data) =>
+            setUtilizadores((prev) =>
+              prev.map((u) =>
+                u.id === Number(uid) ? normalizar({ ...u, ...data }) : u
+              )
+            )
+          )
+          .catch(() => {});
+      }
+    };
+
+    socket.on("profileUpdated", onProfileUpdated);
+    return () => socket.off("profileUpdated", onProfileUpdated);
+  }, [token]);
+
   const executar = async (url, method = "POST", body = null) => {
     const alvoId =
       body?.receiverId || body?.senderId || Number(url.match(/(\d+)$/)?.[1]);
@@ -110,35 +152,29 @@ export default function UsersPage() {
     }
   };
 
-  /* ---------------------------------- JSX --------------------------------------------- */
   return (
     <div className="min-h-screen flex flex-col bg-gray-100">
       <main className="flex-1 pt-20 px-6 max-w-6xl w-full mx-auto">
         <h1 className="text-2xl font-bold mb-6">Utilizadores</h1>
 
-        {/* PESQUISA + FILTRO */}
         <div className="flex flex-col sm:flex-row gap-4 mb-6">
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Pesquisar utilizadores..."
-            className="px-4 py-2 border border-gray-300 rounded-lg w-full max-w-md"
+            className="w-full sm:w-auto sm:min-w-[16rem]
+               rounded-full bg-white border border-gray-300 shadow-sm
+               py-2 pl-4 pr-10
+               focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
 
-          <select
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg w-full sm:w-48"
-          >
-            <option value="todos">Todos</option>
-            <option value="amigos">Amigos</option>
-            <option value="pendente">Pedidos enviados</option>
-            <option value="recebido">Solicitações recebidas</option>
-          </select>
+          <label className="flex items-center gap-2 w-full sm:w-auto">
+            ☰<span className="font-medium whitespace-nowrap">Filtrar por:</span>
+            <FilterSelect value={filter} onChange={setFilter} />
+          </label>
         </div>
 
         {(() => {
-          /* aplica filtro escolhido */
           let lista = utilizadores.filter((u) => u.id !== user?.id);
           if (filter !== "todos")
             lista = lista.filter((u) => u.status === filter);
@@ -166,7 +202,6 @@ export default function UsersPage() {
                     key={u.id}
                     className="bg-white border border-gray-300 shadow-md rounded-xl p-6 mb-6 transition hover:shadow-lg"
                   >
-                    {/* cabeçalho da card */}
                     <div className="flex items-center gap-4 mb-4">
                       <Avatar
                         url={avatarUrl}
@@ -210,7 +245,6 @@ export default function UsersPage() {
                       </span>
                     </div>
 
-                    {/* botões (inalterados) */}
                     <div className="flex flex-wrap gap-3 mt-2">
                       {u.status === "amigos" && (
                         <button
@@ -281,7 +315,6 @@ export default function UsersPage() {
                 );
               })}
 
-              {/* paginação simples */}
               {hasMore && lista.length >= 10 && (
                 <div className="flex justify-center mt-4">
                   <button

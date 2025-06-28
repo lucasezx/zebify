@@ -6,7 +6,6 @@ import PostCard from "../components/postCard";
 import { getDaysInMonth } from "../../../backend/utils/date";
 import Avatar from "../components/avatar";
 import ProfilePictureModal from "../components/profilePictureModal";
-import socket from "../socket";
 
 const API = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
 
@@ -200,11 +199,10 @@ const Profile = () => {
         }
       }
 
-      login(userAtualizado, token);
-      socket.emit("profileUpdated", userAtualizado?.id ?? user.id);
-      setEditando(false);
-      setMensagem("Perfil atualizado com sucesso.");
+      setAvatarPreview(null); // volta a usar a URL oficial
+      setEditando(false); // sai do modo de edição
       setAvatarRemoved(false);
+      setMensagem("Perfil atualizado com sucesso.");
     } catch (err) {
       console.error(err);
       setMensagem("Erro na requisição.");

@@ -24,7 +24,7 @@ export async function uploadAvatar(req, res) {
    WHERE id = ?`,
       [userId]
     );
-    req.app.get("io")?.emit("profileUpdated", userId);
+    req.app.get("io")?.emit("profileUpdated", user);
     const token = generateToken(user);
     res.json({ user, token });
   } catch (err) {
@@ -49,7 +49,7 @@ export async function removeAvatar(req, res) {
       [userId]
     );
     const token = generateToken(user);
-    req.app.get("io")?.emit("profileUpdated", userId);
+    req.app.get("io")?.emit("profileUpdated", user);
     res.json({ user, token });
   } catch (err) {
     console.error(err);
@@ -87,10 +87,25 @@ export async function updateProfile(req, res) {
 
   try {
     await runQuery(
-      `UPDATE users SET first_name = ?, last_name = ?, birth_date = ? WHERE id = ?`,
+      "UPDATE users SET first_name = ?, last_name = ?, birth_date = ? WHERE id = ?",
       [firstName, lastName, birthDate, userId]
     );
-    req.app.get("io")?.emit("profileUpdated", userId);
+
+    const [user] = await allQuery(
+      `SELECT id,
+          first_name AS firstName,
+          last_name  AS lastName,
+          email,
+          avatar_url,
+          birth_date
+   FROM users
+   WHERE id = ?`,
+      [userId]
+    );
+
+    const io = req.app.get("io");
+    io?.emit("profileUpdated", user);
+
     res.json({ message: "Perfil atualizado com sucesso." });
   } catch (err) {
     console.error(err);

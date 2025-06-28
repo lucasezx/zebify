@@ -10,17 +10,17 @@ import socket from "../socket";
 const API = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
 
 export default function UserProfile() {
-  const { id } = useParams(); // string
+  const { id } = useParams();
   const { user: loggedUser, token } = useAuth();
 
-  const viewId = Number(id); // número
+  const viewId = Number(id);
   const [profile, setProfile] = useState(null);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingAcao, setLoadingAcao] = useState(false);
   const [picModal, setPicModal] = useState({ open: false, url: "" });
   const [friendshipStatus, setStatus] = useState("nenhum");
 
-  /* --- listeners dos 4 eventos ------------------------------- */
   useEffect(() => {
     if (!socket || !loggedUser) return;
     const me = loggedUser.id;
@@ -31,12 +31,19 @@ export default function UserProfile() {
       if (me === sid && viewId === rid) setStatus("pendente");
       else if (me === rid && viewId === sid) setStatus("recebido");
     };
-    const onCancel = ({ senderId, receiverId }) => {
-      const sid = Number(senderId),
-        rid = Number(receiverId);
-      if ((me === sid && viewId === rid) || (me === rid && viewId === sid))
+    const onCancel = ({ senderId, receiverId, userId1, userId2 }) => {
+      const sid = Number(senderId ?? userId1);
+      const rid = Number(receiverId ?? userId2);
+
+      if (
+        (loggedUser.id === sid && viewId === rid) ||
+        (loggedUser.id === rid && viewId === sid)
+      ) {
         setStatus("nenhum");
+        loadProfileAndPosts();
+      }
     };
+
     const onAccept = ({ userId1, userId2 }) => {
       const u1 = Number(userId1),
         u2 = Number(userId2);
@@ -57,7 +64,17 @@ export default function UserProfile() {
     };
   }, [loggedUser, viewId]);
 
-  /* --- carregar perfil + posts ------------------------------- */
+  useEffect(() => {
+    const onProfileUpdated = (payload) => {
+      const uid =
+        typeof payload === "object" && payload !== null ? payload.id : payload;
+      if (Number(uid) === viewId) loadProfileAndPosts();
+    };
+
+    socket.on("profileUpdated", onProfileUpdated);
+    return () => socket.off("profileUpdated", onProfileUpdated);
+  }, [viewId]);
+
   const loadProfileAndPosts = async () => {
     const headers = { Authorization: `Bearer ${token}` };
     try {
@@ -80,10 +97,9 @@ export default function UserProfile() {
     loadProfileAndPosts();
   }, [viewId, token]);
 
-  /* --- executar ação ----------------------------------------- */
   const executarAcao = async (url, method = "POST", body = null) => {
     try {
-      setLoading(true);
+      setLoadingAcao(true);
       const res = await fetch(url, {
         method,
         headers: {
@@ -92,24 +108,36 @@ export default function UserProfile() {
         },
         body: body ? JSON.stringify(body) : undefined,
       });
+
       if (!res.ok) {
         const data = await res.json();
         alert(data.message || "Erro.");
         return;
       }
 
-      // estado local imediato
-      if (url.includes("/request") && method === "POST") setStatus("pendente");
-      if (url.includes("/request") && method === "DELETE") setStatus("nenhum");
-      if (url.includes("/accept")) setStatus("amigos");
-      if (url.includes("/reject")) setStatus("nenhum");
-      if (url.includes("/friends/") && method === "DELETE") setStatus("nenhum");
+      const data = await res.json();
+
+      if (data.novoStatus) {
+        setStatus(data.novoStatus);
+      } else {
+        if (url.includes("/request") && method === "POST")
+          setStatus("pendente");
+        if (url.includes("/request") && method === "DELETE")
+          setStatus("nenhum");
+        if (url.includes("/accept")) setStatus("amigos");
+        if (url.includes("/reject")) setStatus("nenhum");
+        if (url.includes("/friends/") && method === "DELETE")
+          setStatus("nenhum");
+      }
+
+      await loadProfileAndPosts();
+    } catch (err) {
+      console.error(err);
     } finally {
-      setLoading(false);
+      setLoadingAcao(false);
     }
   };
 
-  /* -------------------- JSX ---------------------------------- */
   if (loading) return <div className="p-8 text-center">Carregando…</div>;
   if (!profile)
     return <div className="p-8 text-center">Utilizador não encontrado.</div>;
@@ -119,7 +147,6 @@ export default function UserProfile() {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
       <div className="container mx-auto pt-20 px-6 flex flex-col gap-8 flex-1">
-        {/* Cabeçalho */}
         <div className="flex flex-col sm:flex-row justify-between items-center gap-6">
           <div className="flex items-center gap-6">
             <Avatar
@@ -129,11 +156,16 @@ export default function UserProfile() {
               className={
                 profile.avatar_url ? "cursor-pointer" : "cursor-default"
               }
-              onClick={
-                profile.avatar_url
-                  ? () => setPicModal({ open: true, url: profile.avatar_url })
-                  : undefined
-              }
+              onClick={() => {
+                const avatar = profile.avatar_url;
+                const fullUrl =
+                  !avatar || ["null", "undefined"].includes(avatar)
+                    ? null
+                    : /^(https?:|blob:|data:)/.test(avatar)
+                    ? avatar
+                    : `${API}/uploads/${avatar}`;
+                setPicModal({ open: true, url: fullUrl });
+              }}
             />
             <div>
               <h1 className="text-2xl font-bold">
@@ -148,12 +180,12 @@ export default function UserProfile() {
             </div>
           </div>
 
-          {/* Botões amizade */}
           {loggedUser?.id !== viewId && (
             <div className="flex gap-3">
               {friendshipStatus === "nenhum" && (
                 <button
-                  disabled={loading}
+                  type="button"
+                  disabled={loadingAcao}
                   onClick={() =>
                     executarAcao(`${API}/api/friends/request`, "POST", {
                       receiverId: viewId,
@@ -166,7 +198,7 @@ export default function UserProfile() {
               )}
               {friendshipStatus === "pendente" && (
                 <button
-                  disabled={loading}
+                  disabled={loadingAcao}
                   onClick={() =>
                     executarAcao(
                       `${API}/api/friends/request/${viewId}`,
@@ -181,7 +213,7 @@ export default function UserProfile() {
               {friendshipStatus === "recebido" && (
                 <>
                   <button
-                    disabled={loading}
+                    disabled={loadingAcao}
                     onClick={() =>
                       executarAcao(`${API}/api/friends/accept`, "POST", {
                         senderId: viewId,
@@ -192,7 +224,7 @@ export default function UserProfile() {
                     Aceitar
                   </button>
                   <button
-                    disabled={loading}
+                    disabled={loadingAcao}
                     onClick={() =>
                       executarAcao(`${API}/api/friends/reject`, "POST", {
                         senderId: viewId,
@@ -206,7 +238,7 @@ export default function UserProfile() {
               )}
               {friendshipStatus === "amigos" && (
                 <button
-                  disabled={loading}
+                  disabled={loadingAcao}
                   onClick={() =>
                     executarAcao(`${API}/api/friends/${viewId}`, "DELETE")
                   }
@@ -219,7 +251,6 @@ export default function UserProfile() {
           )}
         </div>
 
-        {/* Publicações */}
         <section>
           <h2 className="text-2xl font-semibold mb-4">Publicações</h2>
           {posts.length === 0 ? (
@@ -238,8 +269,10 @@ export default function UserProfile() {
 
       {picModal.open && (
         <ProfilePictureModal
-          url={picModal.url}
+          isOpen={picModal.open}
           onClose={() => setPicModal({ open: false, url: "" })}
+          imageUrl={picModal.url}
+          hideName
         />
       )}
 
