@@ -10,6 +10,7 @@ import fs from "fs";
 import dotenv from "dotenv";
 
 import registerRoutes from "./routes/index.js";
+import messageHandler from "./sockets/messageHandler.js";
 
 dotenv.config();
 
@@ -49,6 +50,8 @@ app.set("io", io);
 
 io.on("connection", (socket) => {
   console.log("Cliente conectado via WebSocket");
+
+  messageHandler(io, socket);
 
   socket.on("nova_postagem", () => {
     io.emit("atualizar_feed");

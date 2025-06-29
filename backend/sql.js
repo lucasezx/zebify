@@ -59,6 +59,26 @@ export const createTables = () => {
       FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
       FOREIGN KEY (user_id) REFERENCES users(id)
     )`);
+
+    db.run(`CREATE TABLE IF NOT EXISTS messages (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      sender_id   INTEGER NOT NULL,
+      receiver_id INTEGER NOT NULL,
+      content     TEXT NOT NULL,
+      created_at  TEXT DEFAULT (datetime('now')),
+      read_at     TEXT,
+      FOREIGN KEY (sender_id)   REFERENCES users(id),
+      FOREIGN KEY (receiver_id) REFERENCES users(id)
+    )`);
+
+    db.run(
+      "ALTER TABLE messages ADD COLUMN read_at TEXT",
+      (err) => {
+        if (err && !err.message.includes('duplicate column name')) {
+          console.error('Error adding read_at column:', err);
+        }
+      }
+    );
   });
 };
 
