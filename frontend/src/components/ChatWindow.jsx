@@ -14,6 +14,8 @@ export default function ChatWindow({ onClose, userId }) {
   const [messages, setMessages] = useState([]);
   const [online, setOnline] = useState([]);
 
+  const popup = Boolean(onClose);
+
   const token = localStorage.getItem("token");
 
   useEffect(() => {
@@ -85,8 +87,12 @@ export default function ChatWindow({ onClose, userId }) {
     ]);
   };
 
+  const containerClasses = popup
+    ? "fixed bottom-16 right-4 bg-white shadow-lg rounded-lg w-72 max-h-[400px] flex flex-col text-sm"
+    : "bg-white border rounded shadow flex flex-col h-full text-sm";
+
   return (
-    <div className="fixed bottom-16 right-4 bg-white shadow-lg rounded-lg w-72 max-h-[400px] flex flex-col text-sm">
+    <div className={containerClasses}>
       <div className="flex items-center justify-between p-2 border-b">
         <select
           className="flex-1 mr-2 border rounded px-1 py-0.5"
@@ -105,7 +111,11 @@ export default function ChatWindow({ onClose, userId }) {
             </option>
           ))}
         </select>
-        <button onClick={onClose} className="text-lg px-2">×</button>
+        {onClose && (
+          <button onClick={onClose} className="text-lg px-2">
+            ×
+          </button>
+        )}
       </div>
       <MessageList messages={messages} currentUser={user.id} />
       <MessageInput onSend={sendMessage} disabled={!active} />
