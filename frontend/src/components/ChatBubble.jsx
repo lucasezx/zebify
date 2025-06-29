@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import socket from "../socket";
 import ChatWindow from "./ChatWindow";
 
 export default function ChatBubble() {
   const [open, setOpen] = useState(false);
+  const location = useLocation();
   const [unread, setUnread] = useState(0);
 
   useEffect(() => {
@@ -14,10 +16,18 @@ export default function ChatBubble() {
     return () => socket.off("receive_message", handler);
   }, [open]);
 
+  useEffect(() => {
+    if (location.pathname.startsWith("/messages")) {
+      setOpen(false);
+    }
+  }, [location]);
+
   const toggle = () => {
     setOpen((o) => !o);
     if (!open) setUnread(0);
   };
+
+  if (location.pathname.startsWith("/messages")) return null;
 
   return (
     <>
