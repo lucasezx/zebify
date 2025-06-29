@@ -1,9 +1,10 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/authContext";
-import { FaUsers, FaHome, FaUser, FaPlus } from "react-icons/fa";
+import { FaUsers, FaHome, FaUser, FaPlus, FaEnvelope } from "react-icons/fa";
 import logoTexto from "../../assets/logoTexto.png";
 import Avatar from "./avatar";
+import ConversationsDropdown from "./ConversationsDropdown";
 
 const API = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
 
@@ -12,6 +13,9 @@ const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [pedidos, setPedidos] = useState(0);
+  const [convs, setConvs] = useState([]);
+  const [unread, setUnread] = useState(0);
+  const [showConvs, setShowConvs] = useState(false);
 
   const buscarPedidos = useCallback(async () => {
     const token = localStorage.getItem("token");
@@ -40,23 +44,60 @@ const Navbar = () => {
     }
   }, [logout, navigate]);
 
+  const buscarConversas = useCallback(async () => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    try {
+      const res = await fetch(`${API}/api/messages`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        if (res.status === 401 || res.status === 403) {
+          setConvs([]);
+          setUnread(0);
+          logout();
+          navigate("/login");
+          return;
+        }
+        const txt = await res.text();
+        throw new Error(txt);
+      }
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        setConvs(data);
+        setUnread(data.reduce((s, c) => s + (c.unread_count || 0), 0));
+      }
+    } catch (err) {
+      console.error("Erro ao buscar conversas:", err.message);
+    }
+  }, [logout, navigate]);
+
   useEffect(() => {
     if (!user) return;
     buscarPedidos();
+    buscarConversas();
     const t = setInterval(buscarPedidos, 10000);
-    return () => clearInterval(t);
-  }, [user, buscarPedidos]);
+    const c = setInterval(buscarConversas, 10000);
+    return () => {
+      clearInterval(t);
+      clearInterval(c);
+    };
+  }, [user, buscarPedidos, buscarConversas]);
 
   const handleLogout = () => {
     logout();
     navigate("/login");
   };
 
-  const Item = ({ Icon, to, badge, title }) => {
-    const isActive = location.pathname === to;
+  const Item = ({ Icon, to, badge, title, onClick }) => {
+    const isActive = to && location.pathname === to;
+    const handleClick = () => {
+      if (onClick) onClick();
+      else if (to) navigate(to);
+    };
     return (
       <div
-        onClick={() => navigate(to)}
+        onClick={handleClick}
         className={`relative cursor-pointer mx-2 flex items-center justify-center rounded-lg p-2 transition-all duration-200
           ${
             isActive
@@ -100,6 +141,17 @@ const Navbar = () => {
                 badge={pedidos}
                 title="Utilizadores / Pedidos"
               />
+              <div className="relative">
+                <Item
+                  Icon={FaEnvelope}
+                  badge={unread}
+                  title="Conversas"
+                  onClick={() => setShowConvs((v) => !v)}
+                />
+                {showConvs && (
+                  <ConversationsDropdown onClose={() => setShowConvs(false)} />
+                )}
+              </div>
 
               {/* Avatar + Olá + Sair */}
               <div className="flex items-center gap-3 ml-4">
