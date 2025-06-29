@@ -9,7 +9,7 @@ export function sendMessage(io) {
   return async function (req, res) {
     const senderId = req.user.id;
     const { receiverId, content } = req.body;
-    if (!receiverId || !content) {
+    if (!receiverId || !content || Number(receiverId) === senderId) {
       return res.status(400).json({ error: "Dados inválidos." });
     }
     try {

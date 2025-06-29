@@ -4,7 +4,6 @@ import { useAuth } from "../context/authContext";
 import { FaUsers, FaHome, FaUser, FaPlus, FaEnvelope } from "react-icons/fa";
 import logoTexto from "../../assets/logoTexto.png";
 import Avatar from "./avatar";
-import ConversationsDropdown from "./ConversationsDropdown";
 
 const API = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
 
@@ -15,7 +14,6 @@ const Navbar = () => {
   const [pedidos, setPedidos] = useState(0);
   const [convs, setConvs] = useState([]);
   const [unread, setUnread] = useState(0);
-  const [showConvs, setShowConvs] = useState(false);
 
   const buscarPedidos = useCallback(async () => {
     const token = localStorage.getItem("token");
@@ -141,17 +139,12 @@ const Navbar = () => {
                 badge={pedidos}
                 title="Utilizadores / Pedidos"
               />
-              <div className="relative">
-                <Item
-                  Icon={FaEnvelope}
-                  badge={unread}
-                  title="Conversas"
-                  onClick={() => setShowConvs((v) => !v)}
-                />
-                {showConvs && (
-                  <ConversationsDropdown onClose={() => setShowConvs(false)} />
-                )}
-              </div>
+              <Item
+                Icon={FaEnvelope}
+                to="/messages"
+                badge={unread}
+                title="Conversas"
+              />
 
               {/* Avatar + Olá + Sair */}
               <div className="flex items-center gap-3 ml-4">
