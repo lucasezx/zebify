@@ -162,6 +162,8 @@ const Profile = () => {
         avatar_url: user.avatar_url,
       };
 
+      login(userAtualizado);
+
       if (avatarFile) {
         const fd = new FormData();
         fd.append("avatar", avatarFile);
@@ -199,8 +201,8 @@ const Profile = () => {
         }
       }
 
-      setAvatarPreview(null); // volta a usar a URL oficial
-      setEditando(false); // sai do modo de edição
+      setAvatarPreview(null); 
+      setEditando(false);
       setAvatarRemoved(false);
       setMensagem("Perfil atualizado com sucesso.");
     } catch (err) {
