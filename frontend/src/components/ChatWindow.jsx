@@ -7,6 +7,7 @@ import MessageList from "./MessageList";
 const API = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
 
 export default function ChatWindow({ onClose, userId }) {
+
   const { user } = useAuth();
   const [friends, setFriends] = useState([]);
   const [active, setActive] = useState(null);
@@ -29,6 +30,7 @@ export default function ChatWindow({ onClose, userId }) {
   }, [userId, friends]);
 
   useEffect(() => {
+
     if (!active) return;
     fetch(`${API}/api/messages/${active.id}`, {
       headers: { Authorization: `Bearer ${token}` },
@@ -41,6 +43,9 @@ export default function ChatWindow({ onClose, userId }) {
           console.error("Erro ao buscar mensagens:", data);
           setMessages([]);
         }
+
+        setMessages(data);
+
         socket.emit("mark_read", active.id);
       });
   }, [active, token]);
