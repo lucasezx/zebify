@@ -14,7 +14,7 @@ export default function MessagesPage() {
   };
 
   return (
-    <div className="p-4 mt-16 flex gap-4">
+    <div className="p-4 mt-16 flex gap-4 h-[calc(100vh-6rem)]">
       <div className="w-64">
         <h2 className="text-xl font-semibold mb-4">Conversas</h2>
         <ConversationsList onSelect={openChat} />
