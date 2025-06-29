@@ -41,9 +41,10 @@ export function listConversations(userId) {
         ) AS unread_count
       FROM messages m
       JOIN users u ON u.id = CASE WHEN m.sender_id = ? THEN m.receiver_id ELSE m.sender_id END
-      WHERE m.sender_id = ? OR m.receiver_id = ?
+      WHERE (m.sender_id = ? OR m.receiver_id = ?)
+        AND NOT (m.sender_id = ? AND m.receiver_id = ?)
       GROUP BY u.id
       ORDER BY last_time DESC`,
-    [userId, userId, userId, userId]
+    [userId, userId, userId, userId, userId, userId]
   );
 }

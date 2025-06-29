@@ -10,9 +10,9 @@ export default function messageHandler(io, socket) {
     io.emit("user_online", userId);
   });
 
-  socket.on("send_message", async ({ receiverId, content }) => {
-    const senderId = socket.userId;
-    if (!senderId || !receiverId || !content) return;
+    socket.on("send_message", async ({ receiverId, content }) => {
+      const senderId = socket.userId;
+      if (!senderId || !receiverId || !content || Number(receiverId) === senderId) return;
     try {
       const result = await createMessage(senderId, receiverId, content);
       const message = {

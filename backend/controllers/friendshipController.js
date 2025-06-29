@@ -72,8 +72,12 @@ export async function listFriends(req, res) {
 
   try {
     const amigos = await allQuery(
-      `SELECT u.id, u.first_name || ' ' || u.last_name AS name, u.email FROM users u JOIN friendships f ON ((f.sender_id = ? AND f.receiver_id = u.id) OR (f.receiver_id = ? AND f.sender_id = u.id)) WHERE f.status = 'aceito'`,
-      [userId, userId]
+      `SELECT u.id, u.first_name || ' ' || u.last_name AS name, u.email
+       FROM users u
+       JOIN friendships f ON ((f.sender_id = ? AND f.receiver_id = u.id)
+         OR (f.receiver_id = ? AND f.sender_id = u.id))
+       WHERE f.status = 'aceito' AND u.id != ?`,
+      [userId, userId, userId]
     );
 
     res.json(amigos);
