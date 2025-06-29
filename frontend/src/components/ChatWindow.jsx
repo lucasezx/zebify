@@ -26,7 +26,10 @@ export default function ChatWindow({ onClose, userId }) {
   }, [token]);
 
   useEffect(() => {
-    if (!userId || !friends.length) return;
+    if (!userId || !friends.length) {
+      setActive(null);
+      return;
+    }
     const f = friends.find((fr) => fr.id === Number(userId));
     if (f) setActive(f);
   }, [userId, friends]);
@@ -88,29 +91,19 @@ export default function ChatWindow({ onClose, userId }) {
   };
 
   const containerClasses = popup
-    ? "fixed bottom-16 right-4 bg-white shadow-lg rounded-lg w-72 max-h-[400px] flex flex-col text-sm"
+    ? "bg-white shadow-lg rounded-lg w-full max-h-[400px] flex flex-col text-sm"
     : "bg-white border rounded shadow flex flex-col h-full text-sm";
 
   return (
     <div className={containerClasses}>
       <div className="flex items-center justify-between p-2 border-b">
-        <select
-          className="flex-1 mr-2 border rounded px-1 py-0.5"
-          onChange={(e) =>
-            setActive(friends.find((f) => f.id === Number(e.target.value)))
-          }
-          value={active?.id || ""}
-        >
-          <option value="" disabled>
-            Escolha...
-          </option>
-          {friends.map((f) => (
-            <option key={f.id} value={f.id}>
-              {online.includes(f.id) ? "\u25CF " : "\u25CB "}
-              {f.name || f.first_name + " " + f.last_name}
-            </option>
-          ))}
-        </select>
+        <span className="flex-1 mr-2 truncate">
+          {active
+            ? `${online.includes(active.id) ? "\u25CF" : "\u25CB"} ${
+                active.name || active.first_name + " " + active.last_name
+              }`
+            : "Selecione um amigo"}
+        </span>
         {onClose && (
           <button onClick={onClose} className="text-lg px-2">
             ×

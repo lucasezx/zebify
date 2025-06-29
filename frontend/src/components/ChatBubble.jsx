@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import socket from "../socket";
-import ChatWindow from "./ChatWindow";
+import ChatPopup from "./ChatPopup";
 
 export default function ChatBubble() {
   const [open, setOpen] = useState(false);
@@ -44,7 +44,7 @@ export default function ChatBubble() {
           )}
         </div>
       </div>
-      {open && <ChatWindow onClose={toggle} />}
+      {open && <ChatPopup onClose={toggle} />}
     </>
   );
 }
