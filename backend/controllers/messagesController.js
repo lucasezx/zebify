@@ -1,4 +1,9 @@
-import { createMessage, getConversation, markAsRead } from "../models/messageModel.js";
+import {
+  createMessage,
+  getConversation,
+  markAsRead,
+  listConversations,
+} from "../models/messageModel.js";
 
 export function sendMessage(io) {
   return async function (req, res) {

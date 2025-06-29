@@ -6,7 +6,8 @@ import MessageList from "./MessageList";
 
 const API = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
 
-export default function ChatWindow({ onClose }) {
+export default function ChatWindow({ onClose, userId }) {
+
   const { user } = useAuth();
   const [friends, setFriends] = useState([]);
   const [active, setActive] = useState(null);
@@ -23,13 +24,19 @@ export default function ChatWindow({ onClose }) {
   }, [token]);
 
   useEffect(() => {
+    if (!userId || !friends.length) return;
+    const f = friends.find((fr) => fr.id === Number(userId));
+    if (f) setActive(f);
+  }, [userId, friends]);
+
+  useEffect(() => {
+
     if (!active) return;
     fetch(`${API}/api/messages/${active.id}`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => res.json())
       .then((data) => {
-
         if (Array.isArray(data)) {
           setMessages(data);
         } else {

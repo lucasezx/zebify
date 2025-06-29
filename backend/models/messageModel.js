@@ -24,3 +24,26 @@ export function markAsRead(userA, userB) {
     [userA, userB]
   );
 }
+
+export function listConversations(userId) {
+  return allQuery(
+    `SELECT
+        u.id,
+        u.first_name,
+        u.last_name,
+        u.avatar_url,
+        MAX(m.created_at) AS last_time,
+        SUM(
+          CASE WHEN m.receiver_id = ?
+                AND m.read_at IS NULL
+                AND m.sender_id = u.id
+          THEN 1 ELSE 0 END
+        ) AS unread_count
+      FROM messages m
+      JOIN users u ON u.id = CASE WHEN m.sender_id = ? THEN m.receiver_id ELSE m.sender_id END
+      WHERE m.sender_id = ? OR m.receiver_id = ?
+      GROUP BY u.id
+      ORDER BY last_time DESC`,
+    [userId, userId, userId, userId]
+  );
+}
