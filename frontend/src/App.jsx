@@ -11,6 +11,8 @@ import UsersPage from "./pages/usersPage";
 import NewPostPage from "./pages/newPostPage";
 import Verificar from "./pages/verificar";
 import UserProfile from "./pages/userProfile";
+import MessagesPage from "./pages/MessagesPage";
+import ChatBubble from "./components/ChatBubble";
 
 function App() {
   return (
@@ -65,7 +67,16 @@ function App() {
         />
 
         <Route path="/verify" element={<Verificar />} />
+        <Route
+          path="/messages"
+          element={
+            <PrivateRoute>
+              <MessagesPage />
+            </PrivateRoute>
+          }
+        />
       </Routes>
+      <ChatBubble />
     </div>
   );
 }
