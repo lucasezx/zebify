@@ -29,7 +29,16 @@ export default function ChatWindow({ onClose }) {
     })
       .then((res) => res.json())
       .then((data) => {
+
+        if (Array.isArray(data)) {
+          setMessages(data);
+        } else {
+          console.error("Erro ao buscar mensagens:", data);
+          setMessages([]);
+        }
+
         setMessages(data);
+
         socket.emit("mark_read", active.id);
       });
   }, [active, token]);

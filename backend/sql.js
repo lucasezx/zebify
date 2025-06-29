@@ -70,6 +70,16 @@ export const createTables = () => {
       FOREIGN KEY (sender_id)   REFERENCES users(id),
       FOREIGN KEY (receiver_id) REFERENCES users(id)
     )`);
+
+    db.run(
+      "ALTER TABLE messages ADD COLUMN read_at TEXT",
+      (err) => {
+        if (err && !err.message.includes('duplicate column name')) {
+          console.error('Error adding read_at column:', err);
+        }
+      }
+    );
+
   });
 };
 
