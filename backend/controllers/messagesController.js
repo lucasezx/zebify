@@ -42,3 +42,14 @@ export async function fetchConversation(req, res) {
     res.status(500).json({ error: "Erro ao buscar mensagens." });
   }
 }
+
+export async function fetchConversations(req, res) {
+  const userId = req.user.id;
+  try {
+    const convs = await listConversations(userId);
+    res.json(convs);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Erro ao buscar conversas." });
+  }
+}

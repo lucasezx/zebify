@@ -44,8 +44,6 @@ export default function ChatWindow({ onClose, userId }) {
           setMessages([]);
         }
 
-        setMessages(data);
-
         socket.emit("mark_read", active.id);
       });
   }, [active, token]);
