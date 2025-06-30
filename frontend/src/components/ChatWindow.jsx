@@ -54,13 +54,20 @@ export default function ChatWindow({ onClose, userId }) {
   }, [active, token]);
 
   useEffect(() => {
-    const add = (id) => setOnline((o) => Array.from(new Set([...o, Number(id)])));
-    const remove = (id) => setOnline((o) => o.filter((u) => u !== Number(id)));
+    const add = (id) =>
+      setOnline((o) => Array.from(new Set([...o, Number(id)])));
+    const remove = (id) =>
+      setOnline((o) => o.filter((u) => u !== Number(id)));
+    const setList = (list) => setOnline(list.map(Number));
+
     socket.on("user_online", add);
     socket.on("user_offline", remove);
+    socket.on("online_users", setList);
+
     return () => {
       socket.off("user_online", add);
       socket.off("user_offline", remove);
+      socket.off("online_users", setList);
     };
   }, []);
 
@@ -97,12 +104,25 @@ export default function ChatWindow({ onClose, userId }) {
   return (
     <div className={containerClasses}>
       <div className="flex items-center justify-between p-2 border-b">
-        <span className="flex-1 mr-2 truncate">
-          {active
-            ? `${online.includes(active.id) ? "\u25CF" : "\u25CB"} ${
-                active.name || active.first_name + " " + active.last_name
-              }`
-            : "Selecione um amigo"}
+        <span className="flex-1 mr-2 truncate flex items-center gap-1">
+          {active ? (
+            <>
+              <span
+                className={`text-xs ${
+                  online.includes(active.id)
+                    ? "text-green-500"
+                    : "text-gray-400"
+                }`}
+              >
+                ●
+              </span>
+              <span>
+                {active.name || `${active.first_name} ${active.last_name}`}
+              </span>
+            </>
+          ) : (
+            "Selecione um amigo"
+          )}
         </span>
         {onClose && (
           <button onClick={onClose} className="text-lg px-2">

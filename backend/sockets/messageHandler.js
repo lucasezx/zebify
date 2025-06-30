@@ -4,9 +4,19 @@ const onlineUsers = new Map();
 
 export default function messageHandler(io, socket) {
   socket.on("login", (userId) => {
+    if (!userId) {
+      if (socket.userId) {
+        onlineUsers.delete(socket.userId);
+        io.emit("user_offline", socket.userId);
+      }
+      socket.userId = null;
+      return;
+    }
+
     socket.userId = userId;
     onlineUsers.set(userId, socket.id);
     socket.join(String(userId));
+    socket.emit("online_users", Array.from(onlineUsers.keys()));
     io.emit("user_online", userId);
   });
 

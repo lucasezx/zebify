@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Avatar from "./avatar";
+import socket from "../socket";
 
 const API = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
 
 export default function ConversationsDropdown({ onClose }) {
   const [convos, setConvos] = useState([]);
+  const [online, setOnline] = useState([]);
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
 
@@ -20,6 +22,24 @@ export default function ConversationsDropdown({ onClose }) {
       })
       .catch((err) => console.error("Erro ao buscar conversas:", err));
   }, [token]);
+
+  useEffect(() => {
+    const add = (id) =>
+      setOnline((o) => Array.from(new Set([...o, Number(id)])));
+    const remove = (id) =>
+      setOnline((o) => o.filter((u) => u !== Number(id)));
+    const setList = (list) => setOnline(list.map(Number));
+
+    socket.on("user_online", add);
+    socket.on("user_offline", remove);
+    socket.on("online_users", setList);
+
+    return () => {
+      socket.off("user_online", add);
+      socket.off("user_offline", remove);
+      socket.off("online_users", setList);
+    };
+  }, []);
 
   const openChat = (id) => {
     navigate(`/messages?user=${id}`);
@@ -42,7 +62,14 @@ export default function ConversationsDropdown({ onClose }) {
               name={`${c.first_name} ${c.last_name}`}
               size={28}
             />
-            <span className="flex-1 text-sm truncate">
+            <span className="flex-1 text-sm truncate flex items-center gap-1">
+              <span
+                className={`text-xs ${
+                  online.includes(c.id) ? "text-green-500" : "text-gray-400"
+                }`}
+              >
+                ●
+              </span>
               {c.first_name} {c.last_name}
             </span>
             {c.unread_count > 0 && (
