@@ -123,30 +123,39 @@ export async function listUsersWithStatus(req, res) {
   const limit = parseInt(req.query.limit) || 10;
   const offset = (page - 1) * limit;
   const search = req.query.search?.toLowerCase() ?? "";
+  const status = req.query.status;
 
   try {
-    const users = await allQuery(
-      `SELECT
-    u.id,
-    u.first_name || ' ' || u.last_name AS name,
-    u.email,
-    u.avatar_url                        AS avatar_url,
-    CASE
-        WHEN f1.status = 'aceito'                                             THEN 'amigos'
-        WHEN f1.status = 'pendente' AND f1.sender_id   = ?                    THEN 'pendente'
-        WHEN f1.status = 'pendente' AND f1.receiver_id = ?                    THEN 'recebido'
-        ELSE 'nenhum'
-    END AS status
+    const base = `SELECT
+        u.id,
+        u.first_name || ' ' || u.last_name AS name,
+        u.email,
+        u.avatar_url AS avatar_url,
+        CASE
+          WHEN f1.status = 'aceito' THEN 'amigos'
+          WHEN f1.status = 'pendente' AND f1.sender_id = ? THEN 'pendente'
+          WHEN f1.status = 'pendente' AND f1.receiver_id = ? THEN 'recebido'
+          ELSE 'nenhum'
+        END AS status
       FROM users u
       LEFT JOIN friendships f1 ON
         ((f1.sender_id = u.id AND f1.receiver_id = ?)
-        OR (f1.sender_id = ? AND f1.receiver_id = u.id))
+       OR (f1.sender_id = ? AND f1.receiver_id = u.id))
       WHERE u.id != ?
-      AND LOWER(u.first_name || ' ' || u.last_name) LIKE ?
-      ORDER BY u.first_name
-      LIMIT ? OFFSET ?`,
-      [userId, userId, userId, userId, userId, `%${search}%`, limit, offset]
-    );
+      AND LOWER(u.first_name || ' ' || u.last_name) LIKE ?`;
+
+    let sql = `SELECT * FROM (${base}) AS sub`;
+    const params = [userId, userId, userId, userId, userId, `%${search}%`];
+
+    if (status && status !== "todos") {
+      sql += ` WHERE status = ?`;
+      params.push(status);
+    }
+
+    sql += ` ORDER BY name LIMIT ? OFFSET ?`;
+    params.push(limit, offset);
+
+    const users = await allQuery(sql, params);
 
     res.json(users);
   } catch (err) {

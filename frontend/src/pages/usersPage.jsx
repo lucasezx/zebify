@@ -22,12 +22,12 @@ export default function UsersPage() {
   const [picModal, setPicModal] = useState({ open: false, url: "", name: "" });
 
   const carregar = useCallback(
-    async (pagina = 1, termo = "") => {
+    async (pagina = 1, termo = "", status = filter) => {
       try {
         const res = await fetch(
           `${API}/api/users/with-status?page=${pagina}&limit=10&search=${encodeURIComponent(
             termo
-          )}`,
+          )}&status=${encodeURIComponent(status)}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         const data = await res.json();
@@ -37,7 +37,7 @@ export default function UsersPage() {
         alert("Erro ao carregar utilizadores");
       }
     },
-    [token]
+    [token, filter]
   );
 
   useEffect(() => {
@@ -85,9 +85,9 @@ export default function UsersPage() {
   useEffect(() => {
     if (user) {
       setPage(1);
-      carregar(1, search);
+      carregar(1, search, filter);
     }
-  }, [user, search, carregar]);
+  }, [user, search, filter, carregar]);
 
   const normalizar = (u) => {
     const first = u.firstName ?? u.first_name ?? "";
@@ -321,7 +321,7 @@ export default function UsersPage() {
                     onClick={() => {
                       const next = page + 1;
                       setPage(next);
-                      carregar(next, search);
+                      carregar(next, search, filter);
                     }}
                     className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-4 rounded"
                   >
