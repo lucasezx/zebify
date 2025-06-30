@@ -201,7 +201,7 @@ const Profile = () => {
         }
       }
 
-      setAvatarPreview(null); 
+      setAvatarPreview(userAtualizado.avatar_url || null);
       setEditando(false);
       setAvatarRemoved(false);
       setMensagem("Perfil atualizado com sucesso.");
