@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import Footer from "../components/footer";
 import { useNavigate } from "react-router-dom";
+import confirmation from "../../assets/confirmation.svg";
 
 const API = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
 
@@ -44,7 +45,7 @@ const Verificar = () => {
           <div className="flex flex-col items-center space-y-2">
             <div className="flex items-center justify-center bg-green-100 p-4 rounded-full mb-2 shadow">
               <img
-                src="/assets/confirmation.svg"
+                src={confirmation}
                 alt="Verificação de Conta"
                 className="w-26 h-26 object-contain"
                 style={{ aspectRatio: "1 / 1" }}

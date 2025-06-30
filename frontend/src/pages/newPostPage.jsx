@@ -2,6 +2,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import NewPost from "../components/newPost";
 import Footer from "../components/footer";
+import posting from "../../assets/posting.svg"; 
 
 const NewPostPage = () => {
   const navigate = useNavigate();
@@ -18,7 +19,7 @@ const NewPostPage = () => {
           </div>
           <div className="hidden lg:flex items-center justify-center">
             <img
-              src="/assets/posting.svg"
+              src={posting}
               alt="Ilustração"
               className="max-w-[220px] drop-shadow-lg rounded-xl"
             />
