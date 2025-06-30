@@ -14,6 +14,7 @@ export default function UsersPage() {
   const token = localStorage.getItem("token");
 
   const [utilizadores, setUtilizadores] = useState([]);
+  const [onlineIds, setOnlineIds] = useState([]);
   const [loadingId, setLoadingId] = useState(null);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -81,6 +82,23 @@ export default function UsersPage() {
       socket.off("amizade_removida");
     };
   }, [user]);
+
+  useEffect(() => {
+    const atualizarOnline = (lista) => setOnlineIds(lista);
+    const entrou = (id) => setOnlineIds((prev) => [...new Set([...prev, id])]);
+    const saiu = (id) =>
+      setOnlineIds((prev) => prev.filter((uid) => uid !== id));
+
+    socket.on("online_users", atualizarOnline);
+    socket.on("user_online", entrou);
+    socket.on("user_offline", saiu);
+
+    return () => {
+      socket.off("online_users", atualizarOnline);
+      socket.off("user_online", entrou);
+      socket.off("user_offline", saiu);
+    };
+  }, []);
 
   useEffect(() => {
     if (user) {
@@ -222,14 +240,24 @@ export default function UsersPage() {
                         }
                       />
                       <div>
-                        <Link
-                          to={`/users/${u.id}`}
-                          className="text-base font-semibold hover:underline truncate max-w-[160px]"
-                        >
-                          {u.name}
-                        </Link>
+                        <div className="flex items-center gap-2">
+                          <Link
+                            to={`/users/${u.id}`}
+                            className="text-base font-semibold hover:underline truncate max-w-[160px]"
+                          >
+                            {u.name}
+                          </Link>
+
+                          {onlineIds.includes(u.id) && (
+                            <span
+                              className="w-2.5 h-2.5 rounded-full bg-green-500"
+                              title="Online"
+                            ></span>
+                          )}
+                        </div>
                         <p className="text-sm text-gray-500">{u.email}</p>
                       </div>
+
                       <span
                         className={`ml-auto px-3 py-1 rounded-full text-xs font-semibold text-white capitalize ${
                           u.status === "amigos"
