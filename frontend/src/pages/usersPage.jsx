@@ -247,15 +247,23 @@ export default function UsersPage() {
 
                     <div className="flex flex-wrap gap-3 mt-2">
                       {u.status === "amigos" && (
-                        <button
-                          disabled={loadingId === u.id}
-                          onClick={() =>
-                            executar(`${API}/api/friends/${u.id}`, "DELETE")
-                          }
-                          className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition"
-                        >
-                          Remover amigo
-                        </button>
+                        <>
+                          <Link
+                            to={`/messages?user=${u.id}`}
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition"
+                          >
+                            Enviar mensagem
+                          </Link>
+                          <button
+                            disabled={loadingId === u.id}
+                            onClick={() =>
+                              executar(`${API}/api/friends/${u.id}`, "DELETE")
+                            }
+                            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition"
+                          >
+                            Remover amigo
+                          </button>
+                        </>
                       )}
                       {u.status === "pendente" && (
                         <button

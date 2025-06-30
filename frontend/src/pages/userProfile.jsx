@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { useAuth } from "../context/authContext";
 import PostCard from "../components/postCard";
 import Avatar from "../components/avatar";
@@ -237,15 +237,23 @@ export default function UserProfile() {
                 </>
               )}
               {friendshipStatus === "amigos" && (
-                <button
-                  disabled={loadingAcao}
-                  onClick={() =>
-                    executarAcao(`${API}/api/friends/${viewId}`, "DELETE")
-                  }
-                  className="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-full shadow transition"
-                >
-                  Remover amigo
-                </button>
+                <>
+                  <Link
+                    to={`/messages?user=${viewId}`}
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-full shadow transition"
+                  >
+                    Enviar mensagem
+                  </Link>
+                  <button
+                    disabled={loadingAcao}
+                    onClick={() =>
+                      executarAcao(`${API}/api/friends/${viewId}`, "DELETE")
+                    }
+                    className="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-full shadow transition"
+                  >
+                    Remover amigo
+                  </button>
+                </>
               )}
             </div>
           )}
