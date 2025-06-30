@@ -1,5 +1,6 @@
 import { useAuth } from "../context/authContext.jsx";
 import { Navigate, useNavigate } from "react-router-dom";
+import welcome from "../assets/welcome.svg";
 
 const Welcome = () => {
   const { user, loading } = useAuth();
@@ -38,7 +39,7 @@ const Welcome = () => {
 
       <div className="max-w-md">
         <img
-          src="/assets/welcome.svg"
+          src={welcome}
           alt="Ilustração de boas-vindas"
           className="w-72 md:w-96"
         />
