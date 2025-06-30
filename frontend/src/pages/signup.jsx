@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import Footer from "../components/footer";
 import { getDaysInMonth } from "../../../backend/utils/date";
 
+const API = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
+
 export default function Signup() {
   const navigate = useNavigate();
   const currentYear = new Date().getFullYear();
@@ -116,7 +118,7 @@ export default function Signup() {
     )}-${form.day.padStart(2, "0")}`;
 
     try {
-      const res = await fetch("http://localhost:3001/signup", {
+      const res = await fetch(`${API}/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...form, birthDate }),
