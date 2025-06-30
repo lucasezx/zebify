@@ -1,6 +1,6 @@
 import { useAuth } from "../context/authContext.jsx";
 import { Navigate, useNavigate } from "react-router-dom";
-import welcome from "../assets/welcome.svg";
+import welcome from "../../assets/welcome.svg";
 
 const Welcome = () => {
   const { user, loading } = useAuth();
