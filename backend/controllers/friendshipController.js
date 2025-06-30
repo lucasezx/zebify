@@ -1,4 +1,5 @@
 import { runQuery, allQuery } from "../sql.js";
+import { deleteConversation } from "../models/messageModel.js";
 
 export function requestFriend(io) {
   return async function (req, res) {
@@ -215,6 +216,8 @@ export function removeFriend(io) {
         `DELETE FROM friendships WHERE (sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?)`,
         [userId, otherId, otherId, userId]
       );
+
+      await deleteConversation(userId, otherId);
 
       io.emit("amizade_removida", { userId1: userId, userId2: otherId });
       io.emit("atualizar_feed");

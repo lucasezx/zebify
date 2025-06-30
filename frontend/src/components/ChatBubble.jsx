@@ -2,11 +2,13 @@ import React, { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import socket from "../socket";
 import ChatPopup from "./ChatPopup";
+import { useAuth } from "../context/authContext";
 
 export default function ChatBubble() {
   const [open, setOpen] = useState(false);
   const location = useLocation();
   const [unread, setUnread] = useState(0);
+  const { user } = useAuth();
 
   useEffect(() => {
     const handler = () => {
@@ -27,7 +29,7 @@ export default function ChatBubble() {
     if (!open) setUnread(0);
   };
 
-  if (location.pathname.startsWith("/messages")) return null;
+  if (!user || location.pathname.startsWith("/messages")) return null;
 
   return (
     <>

@@ -21,8 +21,10 @@ export const AuthProvider = ({ children }) => {
     const savedToken = localStorage.getItem("token");
 
     if (savedUser && savedToken) {
-      setUser(normalizeUser(JSON.parse(savedUser)));
+      const userData = normalizeUser(JSON.parse(savedUser));
+      setUser(userData);
       setToken(savedToken);
+      socket.emit("login", userData.id);
     }
 
     setLoading(false);

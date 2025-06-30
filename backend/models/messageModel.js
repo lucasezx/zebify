@@ -48,3 +48,12 @@ export function listConversations(userId) {
     [userId, userId, userId, userId, userId, userId]
   );
 }
+
+export function deleteConversation(userA, userB) {
+  return runQuery(
+    `DELETE FROM messages
+     WHERE (sender_id = ? AND receiver_id = ?)
+        OR (sender_id = ? AND receiver_id = ?)`,
+    [userA, userB, userB, userA]
+  );
+}
