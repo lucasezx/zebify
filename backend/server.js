@@ -3,7 +3,7 @@ import { createServer } from "http";
 import { Server } from "socket.io";
 import cors from "cors";
 import path from "path";
-import { createTables } from "./sql.js";
+import { createTables } from "./postgresSetup.js";
 import authenticateToken from "./middlewares/authMiddleware.js";
 import multer from "multer";
 import fs from "fs";
