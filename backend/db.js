@@ -1,14 +1,14 @@
 import pg from "pg";
 
+const connectionString =
+  process.env.DATABASE_URL ||
+  "postgresql://lucas:UKWcaCcLTluuTOz2UHLQuYeWnUQOyGBs@dpg-d1hvcnmmcj7s73d6gr10-a.oregon-postgres.render.com/zebifydb";
+
 const pool = new pg.Pool({
-  user: "lucas",
-  host: "dpg-d1hvcnmmcj7s73d6gr10-a",
-  database: "zebifydb",
-  password: "UKWcaCcLTIuuTOz2UHLQuYeWnUQOyGBs",
-  port: 5432,
+  connectionString,
   ssl: {
-    rejectUnauthorized: false
-  }
+    rejectUnauthorized: false,
+  },
 });
 
 export default pool;
