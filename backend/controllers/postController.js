@@ -21,7 +21,7 @@ export async function createPost(req, res) {
 
   try {
     await runQuery(
-      `INSERT INTO posts (user_id, tipo, conteudo, legenda, imagem_path, visibility, editado) VALUES (?, ?, ?, ?, ?, ?, 0)`,
+      `INSERT INTO posts (user_id, tipo, conteudo, legenda, imagem_path, visibility, editado) VALUES (?, ?, ?, ?, ?, ?, FALSE)`,
       [
         user_id,
         tipo,
@@ -124,7 +124,7 @@ export function updatePost(io) {
         conteudoNovo,
         legendaNova,
         visibilidadeNova,
-        foiEditado ? 1 : post.editado,
+        foiEditado ? true : post.editado,
         postId,
       ]
     );
