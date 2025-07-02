@@ -66,7 +66,7 @@ export async function signup(req, res) {
 
     await runQuery(
       `INSERT INTO users (first_name, last_name, email, password, gender, birth_date, verification_code, is_verified)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+   VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         firstName,
         lastName,
@@ -75,7 +75,7 @@ export async function signup(req, res) {
         gender,
         birthDate,
         verificationCode,
-        0,
+        false,
       ]
     );
 
@@ -181,7 +181,7 @@ export async function verifyCode(req, res) {
     }
 
     await runQuery(
-      `UPDATE users SET is_verified = 1, verification_code = NULL WHERE id = ?`,
+      `UPDATE users SET is_verified = TRUE, verification_code = NULL WHERE id = ?`,
       [user.id]
     );
 
