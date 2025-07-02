@@ -19,7 +19,7 @@ export function getConversation(userA, userB) {
 
 export function markAsRead(userA, userB) {
   return runQuery(
-    `UPDATE messages SET read_at = datetime('now')
+    `UPDATE messages SET read_at = NOW()
      WHERE receiver_id = ? AND sender_id = ? AND read_at IS NULL`,
     [userA, userB]
   );
