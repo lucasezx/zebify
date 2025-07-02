@@ -15,8 +15,8 @@ export async function uploadAvatar(req, res) {
     ]);
     const [user] = await allQuery(
       `SELECT id,
-          first_name  AS firstName,
-          last_name   AS lastName,
+          first_name  AS "firstName",
+          last_name   AS "lastName",
           email,
           avatar_url  AS avatar_url,
           birth_date  AS birth_date
@@ -39,8 +39,8 @@ export async function removeAvatar(req, res) {
     await runQuery("UPDATE users SET avatar_url = NULL WHERE id = ?", [userId]);
     const [user] = await allQuery(
       `SELECT id,
-          first_name  AS firstName,
-          last_name   AS lastName,
+          first_name  AS "firstName",
+          last_name   AS "lastName",
           email,
           avatar_url  AS avatar_url,
           birth_date  AS birth_date
@@ -93,8 +93,8 @@ export async function updateProfile(req, res) {
 
     const [user] = await allQuery(
       `SELECT id,
-          first_name AS firstName,
-          last_name  AS lastName,
+          first_name AS "firstName",
+          last_name  AS "lastName",
           email,
           avatar_url,
           birth_date
@@ -121,8 +121,8 @@ export async function getUserById(req, res) {
     const [user] = await allQuery(
       `
       SELECT u.id,
-             u.first_name             AS firstName,
-             u.last_name              AS lastName,
+             u.first_name             AS "firstName",
+             u.last_name              AS "lastName",
              u.avatar_url,
              u.created_at,
              CASE
@@ -130,7 +130,7 @@ export async function getUserById(req, res) {
                WHEN f.status = 'pendente' AND f.sender_id   = ? THEN 'pendente'
                WHEN f.status = 'pendente' AND f.receiver_id = ? THEN 'recebido'
                ELSE 'nenhum'
-             END                       AS friendshipStatus
+             END                       AS "friendshipStatus"
       FROM   users u
       LEFT   JOIN friendships f
              ON ((f.sender_id = u.id AND f.receiver_id = ?)
