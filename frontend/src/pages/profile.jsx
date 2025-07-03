@@ -12,9 +12,9 @@ const API = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
 const calcularIdade = (dataNascimento) => {
   if (!dataNascimento) return null;
 
-  const [ano, mes, dia] = dataNascimento.split("-").map(Number);
+  const nascimento = new Date(dataNascimento);
+  if (isNaN(nascimento)) return null;
   const hoje = new Date();
-  const nascimento = new Date(ano, mes - 1, dia);
 
   let idade = hoje.getFullYear() - nascimento.getFullYear();
   const m = hoje.getMonth() - nascimento.getMonth();
@@ -47,11 +47,13 @@ const Profile = () => {
 
   useEffect(() => {
     if (!editando && user?.birth_date) {
-      const [anoNasc, mesNasc, diaNasc] = user.birth_date.split("-");
-      setAno(anoNasc);
-      setMes(mesNasc);
-      setDia(diaNasc);
-      setIdade(calcularIdade(user.birth_date));
+      const nasc = new Date(user.birth_date);
+      if (!isNaN(nasc)) {
+        setAno(String(nasc.getFullYear()));
+        setMes(String(nasc.getMonth() + 1).padStart(2, "0"));
+        setDia(String(nasc.getDate()).padStart(2, "0"));
+        setIdade(calcularIdade(nasc));
+      }
     }
   }, [user?.birth_date, editando]);
 
@@ -110,11 +112,13 @@ const Profile = () => {
     setNome(user.firstName || "");
     setApelido(user.lastName || "");
     if (user.birth_date) {
-      const [anoNasc, mesNasc, diaNasc] = user.birth_date.split("-");
-      setAno(anoNasc);
-      setMes(mesNasc);
-      setDia(diaNasc);
-      setIdade(calcularIdade(user.birth_date));
+      const nasc = new Date(user.birth_date);
+      if (!isNaN(nasc)) {
+        setAno(String(nasc.getFullYear()));
+        setMes(String(nasc.getMonth() + 1).padStart(2, "0"));
+        setDia(String(nasc.getDate()).padStart(2, "0"));
+        setIdade(calcularIdade(nasc));
+      }
     } else {
       setAno("");
       setMes("");
